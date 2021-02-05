@@ -7,6 +7,7 @@ import (
 	"github.com/AWachtendorf/VivoInVacuo/v2/gameEnvorinment/background"
 	pane2 "github.com/AWachtendorf/VivoInVacuo/v2/gameEnvorinment/viewport"
 	"github.com/AWachtendorf/VivoInVacuo/v2/gameObjects"
+	. "github.com/AWachtendorf/VivoInVacuo/v2/gameObjects/collectables"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/gameObjects/meteoride"
 	"github.com/AWachtendorf/VivoInVacuo/v2/gameObjects/playerShip"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/mathsandhelper"
@@ -28,6 +29,12 @@ type Readupdate interface {
 	Update() error
 }
 
+type ItemOwner interface {
+	SpawnItem() *Item
+	Status() bool
+	ItemDropped() bool
+}
+
 type Object interface {
 	BoundingBox() Rect
 	Energy() float64
@@ -38,16 +45,25 @@ type Object interface {
 	ApplyDamage(damage float64)
 }
 
+type Collectable interface {
+	BoundingBox() Rect
+	Position() Vec2d
+	SetPosition(pos Vec2d)
+	SetCollected(isitcollected bool)
+}
+
 type Game struct {
-	Img         *playerShip.Ship
-	BG          []*background.BackGround
-	Renderables []Renderable
-	Readupdate  []Readupdate
-	Objects     []Object
-	MiniMap     *minimap.Minimap
-	Ship        *playerShip.Ship
-	met         *MeteoPart
-	Scale       float64
+	Img          *playerShip.Ship
+	BG           []*background.BackGround
+	Renderables  []Renderable
+	Readupdate   []Readupdate
+	Objects      []Object
+	ItemOwners   []ItemOwner
+	Collectables []Collectable
+	MiniMap      *minimap.Minimap
+	Ship         *playerShip.Ship
+	met          *MeteoPart
+	Scale        float64
 }
 
 func (g *Game) Update() error {
@@ -58,9 +74,18 @@ func (g *Game) Update() error {
 		}
 	}
 
+	for _, r := range g.ItemOwners {
+		if !r.Status() && !r.ItemDropped() {
+			item := r.SpawnItem()
+			g.Collectables = append(g.Collectables, item)
+			g.Renderables = append(g.Renderables, item)
+			g.Readupdate = append(g.Readupdate, item)
+		}
+	}
+
 	g.applyCollisions()
 	g.applyTorpedos()
-
+	g.PickUpCollectables()
 	return nil
 }
 
@@ -84,7 +109,31 @@ func (g *Game) CreateNewRandomMeteoride() {
 		g.Readupdate = append(g.Readupdate, j)
 		g.Objects = append(g.Objects, j)
 		g.Renderables = append(g.Renderables, j)
+		g.ItemOwners = append(g.ItemOwners, j)
 	}
+}
+
+func (g *Game) PickUpCollectables() {
+	ship := g.Objects[0]
+		for _, objB := range g.Collectables { // compare it only with all subsequent object, if they match (not with itself and not vice versa)
+			if g.Objects[0].BoundingBox().Intersects(objB.BoundingBox()) {
+
+				objB.SetPosition(FollowPosition(Vec2d{ship.Position().X-ViewPortX,ship.Position().Y-ViewPortY},
+				Vec2d{objB.Position().X-ViewPortX,objB.Position().Y-ViewPortY}))
+				x := objB.Position().Sub(ship.Position()).Abs()
+				if x.X < 1 && x.Y < 1 {
+				objB.SetCollected(true)
+				}
+			}
+
+		}
+	}
+
+func  FollowPosition(pos1,pos2 Vec2d) Vec2d{
+	pos := pos1.Sub(pos2).Norm().Scale(3,3)
+	pos2.X += pos.X
+	pos2.Y += pos.Y
+	return Vec2d{pos2.X,pos2.Y}
 }
 
 func (g *Game) applyCollisions() {
@@ -95,17 +144,16 @@ func (g *Game) applyCollisions() {
 			if objA.BoundingBox().Intersects(objB.BoundingBox()) { // do a and b collide with each other?
 				collisionDir := objA.Position().Sub(objB.Position()).Norm()      // the vector of the collision is in general the difference of the two positions
 				totalEnergy := math.Abs(objA.Energy()) + math.Abs(objB.Energy()) // the total energy is absolute value of both ships (not physically correct, because it should be actually a force vector)
-
 				massDistributionA := objA.Mass() / (objA.Mass() + objB.Mass()) // e.g 5 / (5 + 10) = 0.3 or 5 / (5+5)= 0.5
 				energyShipA := totalEnergy * (1 - massDistributionA)           // the lighter the Ship, the more energy it gets => use the inverse: if a Ship only weights 25% it gets 75% of the energy
 				energyShipB := totalEnergy * massDistributionA                 // Ship b just gets the smaller proportion: Ship has 75% of the mass => it gets 25% of the energy
 				collisionDirA := collisionDir.Scale(energyShipA, energyShipA)
 				collisionDirB := collisionDir.Scale(-energyShipB, -energyShipB) // we need to negate one Ship direction, depending of the collision dir
-				objA.ApplyDamage(massDistributionA*100)
-				objB.ApplyDamage(massDistributionA*100)
+				objA.ApplyDamage(massDistributionA * 100)
+				objB.ApplyDamage(massDistributionA * 100)
 				objA.Applyforce(collisionDirA)
 				objB.Applyforce(collisionDirB)
-				}
+			}
 		}
 	}
 }

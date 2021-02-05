@@ -3,6 +3,7 @@ package meteoride
 import (
 	. "github.com/AWachtendorf/VivoInVacuo/v2/animation"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/gameObjects"
+	. "github.com/AWachtendorf/VivoInVacuo/v2/gameObjects/collectables"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/mathsandhelper"
 	"github.com/hajimehoshi/ebiten/v2"
 	"golang.org/x/image/colornames"
@@ -20,7 +21,7 @@ type MeteoPart struct {
 	difference                        float64
 	Rotation, Rotation2, thrust, mass float64
 	currentRotation                   float64
-	alive, separated                  bool
+	alive, separated, droppeditem     bool
 	color0                            Fcolor
 	Pix                               *ebiten.Image
 	PixOpts                           *ebiten.DrawImageOptions
@@ -57,6 +58,7 @@ func NewMeteo(diff float64) *MeteoPart {
 		separated:       false,
 		mass:            float64(rand.Intn(2000) + 1000),
 		health:          400,
+		droppeditem:     false,
 	}
 	m.explodeRotation = NewLinearFloatAnimation(2000*time.Millisecond, 1, 720)
 	m.explodeAlpha = NewLinearFloatAnimation(2000*time.Millisecond, 1, 0)
@@ -130,6 +132,16 @@ func (mp *MeteoPart) ApplyDamage(damage float64) {
 	}
 }
 
+func (mp *MeteoPart)ItemDropped()bool{
+	return mp.droppeditem
+}
+
+func (mp *MeteoPart) SpawnItem() *Item {
+	mp.droppeditem = !mp.droppeditem
+
+	return NewItem(mp.PosXY)
+
+}
 func (mp *MeteoPart) Update() error {
 
 	if mp.separated {
