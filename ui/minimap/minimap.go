@@ -22,7 +22,7 @@ type Minimap struct {
 	posX, posY    float64
 	gamePane      *viewport.Area
 	Squares       []*gameObjects.Squares
-	Meteos        []*MeteoPart
+	Meteos        []*Boulder
 	Pixel         []Pixels
 	position      Vec2d
 	width, height float64

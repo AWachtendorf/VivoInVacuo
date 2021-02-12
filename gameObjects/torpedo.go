@@ -47,13 +47,13 @@ func NewTorpedo(img *ebiten.Image) *Torpedo {
 		imgWidth:         float64(w),
 		imgHeight:        float64(h),
 		scale:            0.5,
-		color0:           Fcolor{R: 1, A: 1}, // only keep the red color channel of the texture
-		color1:           Fcolor{G: 1, A: 0.9},
+		color0:           Fcolor{G: 1, A: 1}, // only keep the red color channel of the texture
+		color1:           Fcolor{B: 1, A: 0.9},
 		lifetimeDuration: 3000 * time.Millisecond,
 		Damage:           100,
 			}
-	t.imgOpts.Filter = ebiten.FilterLinear                // we want a nicer scaling
-	t.imgOpts.CompositeMode = ebiten.CompositeModeLighter // take a look at the so called Porter Duff modes, if you want to know more
+			t.imgOpts.CompositeMode = ebiten.CompositeModeLighter
+
 	return t
 }
 

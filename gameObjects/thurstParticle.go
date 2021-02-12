@@ -65,7 +65,7 @@ func (p *Particle) OnDraw(screen *ebiten.Image) {
 
 func(p *Particle)Explode(i int, position Vec2d){
 		if p.IsAvailable() {
-			p.Start(float64(i*(RandInts(5))), position, float64(RandInts(10)))
+			p.Start(float64(i*(RandInts(0,5))), position, float64(RandInts(1,10)))
 		}
 }
 
@@ -124,6 +124,6 @@ func NewParticle(image *ebiten.Image) *Particle {
 		scale:    float64(rand.Intn(5)),
 		lifetime: time.Millisecond * (500 + time.Duration(rand.Intn(250)))}
 	part.imgOpts.CompositeMode = ebiten.CompositeModeLighter
-	part.imgOpts.Filter = ebiten.FilterLinear
+	part.imgOpts.Filter = ebiten.FilterNearest
 	return part
 }

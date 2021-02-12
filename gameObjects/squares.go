@@ -14,11 +14,12 @@ type Squares struct {
 	PixOpts              *ebiten.DrawImageOptions
 	width, height, scale float64
 	thrust, mass         float64
-	rotation             float64
+	rotation, rotationthurst             float64
 	rotated, accelerated bool
 	OtherForce           Vec2d
 	position             Vec2d
 	objectType string
+
 }
 
 func (s *Squares) BoundingBox() Rect {
@@ -35,7 +36,7 @@ func (s *Squares) UpdateSquares() {
 	dir = dir.Scale(s.thrust, s.thrust)
 	dir = dir.Add(s.OtherForce)
 	s.position = s.position.Add(dir)
-
+	s.rotation += s.rotationthurst
 }
 
 func (s *Squares) Update() error {
@@ -78,7 +79,7 @@ func (s *Squares) Mass() float64 {
 }
 
 func (s *Squares) React()  {
-
+	s.rotationthurst = RandFloats(-0.01, 0.01)
 }
 
 //adds force to the ship, acting as another force
@@ -102,14 +103,7 @@ func (s *Squares) DecayAccelerationOverTime() {
 
 	decay := 1 - (Elapsed / s.mass)
 
-	//if s.thrust != 0.00 {
-	//	if s.thrust < 0.00 {
-	//		s.thrust *= decay
-	//	}
-	//	if s.thrust > 0.00 {
-	//		s.thrust *= decay
-	//	}
-	//}
+
 	if s.OtherForce.X != 0.0 {
 		if s.OtherForce.X < 0.0 {
 			s.OtherForce.X *= decay
@@ -152,6 +146,7 @@ func AddAsquare(posX, posY, wi, hi float64) *Squares {
 		OtherForce: Vec2d{},
 		position:   Vec2d{posX, posY},
 		objectType: "Square",
+		rotationthurst: RandFloats(-0.01,0.01),
 	}
 	return test111
 }

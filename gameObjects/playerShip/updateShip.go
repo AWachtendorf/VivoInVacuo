@@ -8,9 +8,9 @@ import (
 	"math/rand"
 )
 
-
 func (s *Ship) Update() error {
 	Rotation = s.ProcessInput()
+	s.inventory.Update()
 	s.healthBar.Update()
 	s.shieldBar.Update()
 	s.applyParticles()
@@ -42,14 +42,14 @@ func (s *Ship) ProcessInput() float64 {
 
 	if ebiten.IsKeyPressed(ebiten.KeyW) {
 		if s.thrust < s.maxThrust {
-			s.thrust += thrust*2
+			s.thrust += thrust * 2
 			s.accelerated = true
 		}
 	}
 
 	if ebiten.IsKeyPressed(ebiten.KeyS) {
 		if s.thrust > -s.maxThrust {
-			s.thrust -= thrust*2
+			s.thrust -= thrust * 2
 			s.accelerated = true
 		}
 	}
@@ -98,10 +98,8 @@ func (s *Ship) fireTorpedo() {
 	}
 }
 
-
 func (s *Ship) applyParticles() {
 	if !s.exploding {
-
 		for i, part := range s.particles {
 			if part.IsAvailable() {
 				if i%2 == 0 {

@@ -4,8 +4,11 @@ import (
 	. "github.com/AWachtendorf/VivoInVacuo/v2/animation"
 	"github.com/AWachtendorf/VivoInVacuo/v2/gameObjects"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/mathsandhelper"
+	. "github.com/AWachtendorf/VivoInVacuo/v2/ui/inventory"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/ui/statusBar"
+	. "github.com/AWachtendorf/VivoInVacuo/v2/ui/textOnScreen"
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/examples/resources/fonts"
 	"golang.org/x/image/colornames"
 )
 
@@ -38,10 +41,15 @@ type Ship struct {
 	torpedoes []*gameObjects.Torpedo
 	particles []*gameObjects.Particle
 
+	inventory *Inventory
+
+
 	exploding       bool
 	explodeRotation FloatAnimation
 	explodeAlpha    FloatAnimation
 	explodeScale    FloatAnimation
+	uiText            *Text
+	otherText            *Text
 }
 
 func (s *Ship) BoundingBox() Rect {
@@ -93,11 +101,15 @@ func (s *Ship) Applyforce(force Vec2d) {
 }
 
 func (s *Ship) React() {
-
+	s.rotationThrust += RandFloats(-2, 2)
 }
 
 func (s *Ship) Status() bool {
 	return true
+}
+
+func (s *Ship) Inventory() *Inventory {
+	return s.inventory
 }
 
 func NewShip(img, torpedoImg, partImg *ebiten.Image, torpedos int) *Ship {
@@ -125,7 +137,15 @@ func NewShip(img, torpedoImg, partImg *ebiten.Image, torpedos int) *Ship {
 		shipShieldCurrent: 200,
 		shieldMax:         200,
 		repairKit:         1000,
+		inventory:         NewInventory(),
+		uiText: &Text{},
+		otherText: &Text{},
 	}
+	s.imgOpts.Filter = ebiten.FilterLinear                // we want a nicer scaling
+	s.imgOpts.CompositeMode = ebiten.CompositeModeLighter
+
+	s.uiText.SetupText(15, fonts.PressStart2P_ttf)
+
 
 	s.healthBar = NewStatusBar(int(s.hullMax), 15, 10, 10, s.hullMax, s.repairKit, colornames.Darkred)
 	s.shieldBar = NewStatusBar(int(s.hullMax), 15, 10, 30, s.hullMax, s.repairKit, colornames.Darkcyan)
