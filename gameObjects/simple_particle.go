@@ -1,45 +1,45 @@
 package gameObjects
 
 import (
-	"github.com/hajimehoshi/ebiten/v2"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/mathsandhelper"
+	"github.com/hajimehoshi/ebiten/v2"
 	"golang.org/x/image/colornames"
-	)
+)
 
 type StaticParticle struct {
-	image                          *ebiten.Image
-	imgOpts                        *ebiten.DrawImageOptions
-	scale, imageWidth, imageHeight float64
-	position                       Vec2d
+	staticParticleImage        *ebiten.Image
+	staticParticleImageOptions *ebiten.DrawImageOptions
+	scale, width, height       float64
+	position                   Vec2d
 }
 
-func(s *StaticParticle)Update()error{
+func (s *StaticParticle) Update() error {
 
 	return nil
 }
 
-func(s *StaticParticle)Draw(screen *ebiten.Image){
-	s.imgOpts.GeoM.Reset()
-	s.imgOpts.GeoM.Translate(s.position.X+(ViewPortX/10),s.position.Y+(ViewPortY/10))
+func (s *StaticParticle) Draw(screen *ebiten.Image) {
+	s.staticParticleImageOptions.GeoM.Reset()
+	s.staticParticleImageOptions.GeoM.Translate(s.position.X+(ViewPortX/10), s.position.Y+(ViewPortY/10))
 	if s.position.X+(ViewPortX/10) >= -10 &&
 		s.position.X+(ViewPortX/10) <= ScreenWidth+10 &&
 		s.position.Y+(ViewPortY/10) >= -10 &&
-		s.position.Y+(ViewPortY/10) <= ScreenHeight+10{
-		screen.DrawImage(s.image,s.imgOpts)
+		s.position.Y+(ViewPortY/10) <= ScreenHeight+10 {
+		screen.DrawImage(s.staticParticleImage, s.staticParticleImageOptions)
 	}
 }
 
-func NewStaticParticle(posX, posY, scl float64)*StaticParticle{
-	img := ebiten.NewImage(1,1)
-	img.Fill(colornames.White)
-	w,h := img.Size()
+func NewStaticParticle(x, y, scl float64) *StaticParticle {
+	newPartImg := ebiten.NewImage(1, 1)
+	newPartImg.Fill(colornames.White)
+	w, h := newPartImg.Size()
 	sp := &StaticParticle{
-		image:       img,
-		imgOpts:     &ebiten.DrawImageOptions{},
-		scale:       scl,
-		imageWidth:  float64(w),
-		imageHeight: float64(h),
-		position:    Vec2d{posX,posY},
+		staticParticleImage:        newPartImg,
+		staticParticleImageOptions: &ebiten.DrawImageOptions{},
+		scale:                      scl,
+		width:                      float64(w),
+		height:                     float64(h),
+		position:                   Vec2d{X: x, Y: y},
 	}
 	return sp
 }

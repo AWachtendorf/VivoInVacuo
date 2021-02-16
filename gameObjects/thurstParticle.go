@@ -12,50 +12,59 @@ import (
 
 //struct for particles based on the setup that ship and torpedoes have
 type Particle struct {
-	image                          *ebiten.Image
-	imgOpts                        *ebiten.DrawImageOptions
-	scale, imageWidth, imageHeight float64
+	particleImage        *ebiten.Image
+	particleImageOptions *ebiten.DrawImageOptions
+	scale, width, height float64
 
-	position                       Vec2d
-	direction                      Vec2d
-	speed,rotation                 float64
+	position        Vec2d
+	direction       Vec2d
+	speed float64
 
-	lifetime                       time.Duration
-	starttime                      time.Duration
-	current                        time.Duration
+	lifetime  time.Duration
+	starttime time.Duration
+	current   time.Duration
 
 	available     bool
 	particleAlpha FloatAnimation
-	}
+}
 
-type ParticlePack struct{
+type ParticlePack struct {
 	particles []*Particle
 }
 
-func NewParticlePack(amount int)ParticlePack{
+func NewParticlePack(amount int) ParticlePack {
 	pp := ParticlePack{}
 	pix := ebiten.NewImage(2, 2)
 	pix.Fill(colornames.White)
 	for i := 0; i < amount; i++ {
-		pp.particles = append(pp.particles,NewParticle(pix))
+		pp.particles = append(pp.particles, NewParticle(pix))
 	}
 	return pp
 }
 
+func(pp *ParticlePack)Particles()[]*Particle{
+	return pp.particles
+}
 
-
-func(pp *ParticlePack)Explode(position Vec2d){
+func (pp *ParticlePack) Explode(position Vec2d) {
 	for i, j := range pp.particles {
 		j.Explode(i, position)
 	}
 }
 
-func(pp *ParticlePack)Draw(screen *ebiten.Image){
+func (pp *ParticlePack) UseForThrust(angle float64, startPos Vec2d, speed float64) {
+	for _, j := range pp.particles {
+		if j.IsAvailable() {
+			j.Start(angle, startPos, speed)
+		}
+	}
+}
+
+func (pp *ParticlePack) Draw(screen *ebiten.Image) {
 	for _, j := range pp.particles {
 		j.OnDraw(screen)
 	}
 }
-
 
 //onDraw method for particles
 func (p *Particle) OnDraw(screen *ebiten.Image) {
@@ -63,12 +72,11 @@ func (p *Particle) OnDraw(screen *ebiten.Image) {
 	p.drawPart(screen, p.speed)
 }
 
-func(p *Particle)Explode(i int, position Vec2d){
-		if p.IsAvailable() {
-			p.Start(float64(i*(RandInts(0,5))), position, float64(RandInts(1,10)))
-		}
+func (p *Particle) Explode(i int, position Vec2d) {
+	if p.IsAvailable() {
+		p.Start(float64(i*(RandInts(0, 5))), position, float64(RandInts(1, 10)))
+	}
 }
-
 
 //checks if particles are available
 func (p *Particle) IsAvailable() bool {
@@ -101,29 +109,29 @@ func (p *Particle) Start(angle float64, startPos Vec2d, speed float64) {
 func (p *Particle) drawPart(screen *ebiten.Image, speed float64) {
 	//p.speed = 3 * ScaleFactor
 	if !p.available {
-		p.imgOpts.GeoM.Reset()
-		p.imgOpts.ColorM.Reset()
-		p.imgOpts.GeoM.Translate(-p.imageWidth/2, -p.imageHeight/2)
-		p.imgOpts.ColorM.Scale(1, 1, 1, p.particleAlpha.Current())
+		p.particleImageOptions.GeoM.Reset()
+		p.particleImageOptions.ColorM.Reset()
+		p.particleImageOptions.GeoM.Translate(-p.width/2, -p.height/2)
+		p.particleImageOptions.ColorM.Scale(1, 1, 1, p.particleAlpha.Current())
 		p.particleAlpha.Apply(Elapsed)
-		p.imgOpts.GeoM.Scale(p.scale, p.scale)
-		p.imgOpts.GeoM.Rotate(2* (math.Pi / 180))
+		p.particleImageOptions.GeoM.Scale(p.scale, p.scale)
+		p.particleImageOptions.GeoM.Rotate(2 * (math.Pi / 180))
 		//updates position of article
 		p.position = p.position.Add(p.direction.Scale(speed, speed))
-		p.imgOpts.GeoM.Translate(p.position.X, p.position.Y)
-		//draws the actual image
-		screen.DrawImage(p.image, p.imgOpts)
+		p.particleImageOptions.GeoM.Translate(p.position.X, p.position.Y)
+		//draws the actual staticParticleImage
+		screen.DrawImage(p.particleImage, p.particleImageOptions)
 	}
 }
 
 //creates a particle. Is called in newship and newtorpedo
 func NewParticle(image *ebiten.Image) *Particle {
 	part := &Particle{
-		image:    image,
-		imgOpts:  &ebiten.DrawImageOptions{},
-		scale:    float64(rand.Intn(5)),
-		lifetime: time.Millisecond * (500 + time.Duration(rand.Intn(250)))}
-	part.imgOpts.CompositeMode = ebiten.CompositeModeLighter
-	part.imgOpts.Filter = ebiten.FilterNearest
+		particleImage:        image,
+		particleImageOptions: &ebiten.DrawImageOptions{},
+		scale:                float64(rand.Intn(5)),
+		lifetime:             time.Millisecond * (500 + time.Duration(rand.Intn(250)))}
+	part.particleImageOptions.CompositeMode = ebiten.CompositeModeLighter
+	part.particleImageOptions.Filter = ebiten.FilterNearest
 	return part
 }

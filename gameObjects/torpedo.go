@@ -20,9 +20,9 @@ const (
 
 // A Torpedo is a projectile weapon used by a ship
 type Torpedo struct {
-	img                 *ebiten.Image            // img is the gameObjects texture
-	imgOpts             *ebiten.DrawImageOptions // opts the image options used to render this torpedoes
-	imgWidth, imgHeight float64                  // width and height of the ship image in px (texture size)
+	torpedoImage        *ebiten.Image            // torpedoImage is the gameObjects texture
+	torpedoimageOptions *ebiten.DrawImageOptions // opts the staticParticleImage options used to render this torpedoes
+	width, height       float64                  // width and height of the ship staticParticleImage in px (texture size)
 	scale               float64                  // the size of the gameObjects, if we are not happy with the texture size
 	position            Vec2d                    // the current position
 	dir                 Vec2d                    // dir is the heading direction into which the gameObjects flies
@@ -42,17 +42,17 @@ type Torpedo struct {
 func NewTorpedo(img *ebiten.Image) *Torpedo {
 	w, h := img.Size()
 	t := &Torpedo{
-		img:              img,
-		imgOpts:          &ebiten.DrawImageOptions{},
-		imgWidth:         float64(w),
-		imgHeight:        float64(h),
-		scale:            0.5,
-		color0:           Fcolor{G: 1, A: 1}, // only keep the red color channel of the texture
-		color1:           Fcolor{B: 1, A: 0.9},
-		lifetimeDuration: 3000 * time.Millisecond,
-		Damage:           100,
+		torpedoImage:        img,
+		torpedoimageOptions: &ebiten.DrawImageOptions{},
+		width:               float64(w),
+		height:              float64(h),
+		scale:               0.5,
+		color0:              Fcolor{G: 1, A: 1}, // only keep the red color channel of the texture
+		color1:              Fcolor{B: 1, A: 0.9},
+		lifetimeDuration:    3000 * time.Millisecond,
+		Damage:              100,
 			}
-			t.imgOpts.CompositeMode = ebiten.CompositeModeLighter
+			t.torpedoimageOptions.CompositeMode = ebiten.CompositeModeLighter
 
 	return t
 }
@@ -91,12 +91,12 @@ func (t *Torpedo) Fire(startPos Vec2d, rotDegree float64) {
 
 // Width returns the real pixel width after applying display scale and ship scale
 func (t *Torpedo) Width() float64 {
-	return t.scale * ScaleFactor * t.imgWidth
+	return t.scale * ScaleFactor * t.width
 }
 
 // Height returns the real pixel height after applying display scale and ship scale
 func (t *Torpedo) Height() float64 {
-	return t.scale * ScaleFactor * t.imgHeight
+	return t.scale * ScaleFactor * t.height
 }
 
 // BoundingBox returns a bounding rect
@@ -157,15 +157,15 @@ func (t *Torpedo) OnDraw(screen *ebiten.Image) {
 
 // drawImg is extracted, because we draw multiple times per gameObjects to create a nice visual effect
 func (t *Torpedo) drawImg(screen *ebiten.Image, rot float64, scale float64, color Fcolor) {
-	t.imgOpts.GeoM.Reset()
-	t.imgOpts.GeoM.Translate(-t.imgWidth/2, -t.imgHeight/2) // move pivot to image center
-	t.imgOpts.GeoM.Rotate(rot * (math.Pi / 180))            // let it rotate fast
-	t.imgOpts.GeoM.Scale(ScaleFactor, ScaleFactor)          // use the display scale, so that the gameObjects has visually the same size
-	t.imgOpts.GeoM.Scale(t.scale*scale, t.scale*scale)      // scale the local object coordinates
-	t.imgOpts.GeoM.Translate(t.position.X, t.position.Y)    // move gameObjects center to the actual coordinates
+	t.torpedoimageOptions.GeoM.Reset()
+	t.torpedoimageOptions.GeoM.Translate(-t.width/2, -t.height/2)    // move pivot to staticParticleImage center
+	t.torpedoimageOptions.GeoM.Rotate(rot * (math.Pi / 180))         // let it rotate fast
+	t.torpedoimageOptions.GeoM.Scale(ScaleFactor, ScaleFactor)       // use the display scale, so that the gameObjects has visually the same size
+	t.torpedoimageOptions.GeoM.Scale(t.scale*scale, t.scale*scale)   // scale the local object coordinates
+	t.torpedoimageOptions.GeoM.Translate(t.position.X, t.position.Y) // move gameObjects center to the actual coordinates
 
-	t.imgOpts.ColorM.Reset()
-	t.imgOpts.ColorM.Scale(color.R, color.G, color.B, color.A) // colorize the texture
-	screen.DrawImage(t.img, t.imgOpts)
+	t.torpedoimageOptions.ColorM.Reset()
+	t.torpedoimageOptions.ColorM.Scale(color.R, color.G, color.B, color.A) // colorize the texture
+	screen.DrawImage(t.torpedoImage, t.torpedoimageOptions)
 
 }

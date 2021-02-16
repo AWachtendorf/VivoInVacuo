@@ -1,84 +1,124 @@
 package viewport
 
 import (
-	"github.com/AWachtendorf/VivoInVacuo/v2/gameObjects/playerShip"
+	"fmt"
+	. "github.com/AWachtendorf/VivoInVacuo/v2/gameObjects/playerShip"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/mathsandhelper"
 	"github.com/hajimehoshi/ebiten/v2"
 	"math"
 )
 
-type Area struct {
-	imgOpts       *ebiten.DrawImageOptions
-	Width, Height float64
-	Position      Vec2d
-	offset        Vec2d
-	scale         float64
+
+
+type Viewport struct {
+	width, height float64
+	position      Vec2d
 	coordinates   Vec2d
-	SShip         *playerShip.Ship
-	thrust        float64
-	maxThrust     float64
+	playerShip    *Ship
 	otherForce    Vec2d
+	sectors       int
 }
 
-func NewGamePane(initalX, initalY float64, ship *playerShip.Ship, wi, h, maxthru float64) *Area {
-	gp := &Area{
-		Width:     wi,
-		Height:    h,
-		imgOpts:   &ebiten.DrawImageOptions{},
-		Position:  Vec2d{X: initalX, Y: initalY},
-		offset:    Vec2d{X: initalX, Y: initalY},
-		maxThrust: maxthru,
-		SShip:     ship,
+func (v *Viewport) CalculateSectorBounds(X, Y float64) Sector {
+	lengthOfSectorX := float64(WorldWidth / v.sectors)
+	lengthOfSectorY := float64(WorldHeight / v.sectors)
+
+	xmin := X * lengthOfSectorX
+	xmax := xmin + lengthOfSectorX
+	ymin := Y * lengthOfSectorY
+	ymax := ymin + lengthOfSectorY
+	return Sector{xmin, xmax, ymin, ymax}
+}
+
+func (v *Viewport) Width() float64 {
+	return v.width
+}
+
+func (v *Viewport) Height() float64 {
+	return v.height
+}
+
+func (v *Viewport) WhichSector() (int, int) {
+	for i := 0; i < v.sectors; i++ {
+		for j := 0; j < v.sectors; j++ {
+			sec := v.CalculateSectorBounds(float64(i), float64(j))
+			{
+				if v.playerShip.Position().X-ViewPortX > sec.Xmin &&
+					v.playerShip.Position().X-ViewPortX < sec.Xmax &&
+					v.playerShip.Position().Y-ViewPortY > sec.Ymin &&
+					v.playerShip.Position().Y-ViewPortY < sec.Ymax {
+					return i, j
+				}
+			}
+		}
+
 	}
-	return gp
+	return 0, 0
 }
 
-func (a *Area) Applyforce(force Vec2d) {
-	a.otherForce = a.otherForce.Add(force)
+func (v *Viewport) SpawnInSectorRandom(X, Y float64) Vec2d {
+	return Vec2d{X: RandFloats(v.CalculateSectorBounds(X, Y).Xmin, v.CalculateSectorBounds(X, Y).Xmax),
+		Y: RandFloats(v.CalculateSectorBounds(X, Y).Ymin, v.CalculateSectorBounds(X, Y).Ymax),
+	}
 }
 
-func (a *Area) Draw(screen *ebiten.Image) {
-	a.imgOpts.GeoM.Reset()
-	a.imgOpts.GeoM.Scale(a.scale, a.scale)
-	a.imgOpts.GeoM.Translate(-a.Width/2, -a.Height/2)
-	a.imgOpts.GeoM.Rotate(90 * (math.Pi / 180))
-	a.imgOpts.GeoM.Translate(a.Position.X, a.Position.Y)
+func (v *Viewport) ShipIsInWhichSector(screen *ebiten.Image) {
+	X, Y := v.WhichSector()
+	v.playerShip.OtherText().TextToScreen(screen, 10, ScreenHeight-10, fmt.Sprintf("Sector %x, %x", X, Y), 0)
+
 }
 
-func (a *Area) Update() error {
-
-	ViewPortX = a.Position.X
-	ViewPortY = a.Position.Y
-	a.UpdatePosition()
-	return nil
+func NewViewport(initalX, initalY, width, height float64, ship *Ship, amountOfSectors int) *Viewport {
+	vp := &Viewport{
+		width:      width,
+		height:     height,
+		position:   Vec2d{X: initalX, Y: initalY},
+		playerShip: ship,
+		sectors:    amountOfSectors,
+	}
+	return vp
 }
 
-func (a *Area) Status() bool {
+func (v *Viewport) Applyforce(force Vec2d) {
+	v.otherForce = v.otherForce.Add(force)
+}
+
+func (v *Viewport) Status() bool {
 	return true
 }
 
-func (a *Area) UpdatePosition() {
+func (v *Viewport) UpdatePosition() {
 
-	if a.Position.X > ScreenWidth/2 {
-		a.Position.X = ScreenWidth/2 - a.Width
+	if v.position.X > ScreenWidth/2 {
+		v.position.X = ScreenWidth/2 - v.Width()
 	}
 
-	if a.Position.X < ScreenWidth/2-a.Width {
-		a.Position.X = ScreenWidth / 2
+	if v.position.X < ScreenWidth/2-v.Width() {
+		v.position.X = ScreenWidth / 2
 	}
 
-	if a.Position.Y < ScreenHeight/2-a.Height {
-		a.Position.Y = ScreenHeight / 2
+	if v.position.Y < ScreenHeight/2-v.Height() {
+		v.position.Y = ScreenHeight / 2
 	}
 
-	if a.Position.Y > ScreenHeight/2 {
-		a.Position.Y = ScreenHeight/2 - a.Height
+	if v.position.Y > ScreenHeight/2 {
+		v.position.Y = ScreenHeight/2 - v.Height()
 	}
 
+	rotationRadiant := Rotation
+	dir := Vec2d{X: math.Cos(rotationRadiant), Y: math.Sin(rotationRadiant)}
+	dir = dir.Scale(v.playerShip.Energy(), v.playerShip.Energy())
+	dir = dir.Add(v.playerShip.OtherForce())
+	v.position = v.position.Sub(dir)
+}
 
-	rotationRadiant := Rotation           // we need the radiant later a few times, so only calculate once per frame
-	dir := Vec2d{X: math.Cos(rotationRadiant), Y: math.Sin(rotationRadiant)} // the rotation as a vector
-	dir = dir.Scale(a.SShip.Energy(), a.SShip.Energy())                      // scale the direction with the actual thrust value
-	dir = dir.Add(a.SShip.OtherForce)
-	a.Position = a.Position.Sub(dir)
+func (v *Viewport) Draw(screen *ebiten.Image) {
+
+}
+
+func (v *Viewport) Update() error {
+	ViewPortX = v.position.X
+	ViewPortY = v.position.Y
+	v.UpdatePosition()
+	return nil
 }

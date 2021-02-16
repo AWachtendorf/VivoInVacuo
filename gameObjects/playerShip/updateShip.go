@@ -74,7 +74,7 @@ func (s *Ship) ProcessInput() float64 {
 		s.rotationThrust *= decay
 	}
 
-	s.OtherForce = s.OtherForce.Scale(decay, decay)
+	s.otherForce = s.otherForce.Scale(decay, decay)
 	s.rotation += s.rotationThrust
 	rotationRadiant := s.rotation * (math.Pi / 180) // we need the radiant later a few times, so only calculate once per frame
 
@@ -99,23 +99,20 @@ func (s *Ship) fireTorpedo() {
 }
 
 func (s *Ship) applyParticles() {
-	if !s.exploding {
-		for i, part := range s.particles {
-			if part.IsAvailable() {
-				if i%2 == 0 {
-					part.Start(s.rotation-180, RotateAroundPivot(
-						s.Position().X-40+float64(rand.Intn(8)),
-						s.Position().Y+40+float64(rand.Intn(8)),
-						s.Position().X, s.Position().Y, -(s.rotation-80)), s.thrust)
-					break
-				}
-				part.Start(s.rotation-180, RotateAroundPivot(
+	for i, part := range s.particlePack.Particles() {
+		if part.IsAvailable() {
+			if i%2 == 0 {
+				s.particlePack.UseForThrust(s.rotation-180, RotateAroundPivot(
 					s.Position().X-40+float64(rand.Intn(8)),
 					s.Position().Y+40+float64(rand.Intn(8)),
-					s.Position().X, s.Position().Y, -(s.rotation-10)), s.thrust)
+					s.Position().X, s.Position().Y, -(s.rotation-80)), s.thrust)
 				break
 			}
+			s.particlePack.UseForThrust(s.rotation-180, RotateAroundPivot(
+				s.Position().X-40+float64(rand.Intn(8)),
+				s.Position().Y+40+float64(rand.Intn(8)),
+				s.Position().X, s.Position().Y, -(s.rotation-10)), s.thrust)
+			break
 		}
-
 	}
 }

@@ -1,0 +1,231 @@
+package floatingObjects
+
+import (
+	. "github.com/AWachtendorf/VivoInVacuo/v2/animation"
+	. "github.com/AWachtendorf/VivoInVacuo/v2/gameObjects"
+	. "github.com/AWachtendorf/VivoInVacuo/v2/gameObjects/collectables"
+	. "github.com/AWachtendorf/VivoInVacuo/v2/mathsandhelper"
+	"github.com/hajimehoshi/ebiten/v2"
+	"golang.org/x/image/colornames"
+	"math"
+	"math/rand"
+	"time"
+)
+
+type FloatingObject struct {
+	objectImage                                                   *ebiten.Image
+	objectImageOptions                                            *ebiten.DrawImageOptions
+	width, height                                                 float64
+	position                                                      Vec2d
+	spaceBetweenObjects                                           float64
+	thrust, mass                                                  float64
+	coreRotation, additionalRotation, rotationSpeedWhileSeparated float64
+	alive, isSeparated, droppedItem, isRock                       bool
+	colorOfObject                                                 Fcolor
+	positionPixelImage                                            *ebiten.Image
+	positionPixelOptions                                          *ebiten.DrawImageOptions
+	otherForce                                                    Vec2d
+	explodeRotation                                               FloatAnimation
+	explodeAlpha                                                  FloatAnimation
+	idleAfterSeparation                                           FloatAnimation
+	health                                                        float64
+	particlePack                                                  ParticlePack
+}
+
+func NewFloatingObject(diff float64, isseparated, isrock bool, position Vec2d, color Fcolor) *FloatingObject {
+	newimg := ebiten.NewImage(rand.Intn(50)+50, rand.Intn(50)+50)
+	newimg.Fill(colornames.White)
+
+	w, h := newimg.Size()
+	pix := ebiten.NewImage(2, 2)
+	pix.Fill(colornames.White)
+	m := &FloatingObject{
+		objectImage:                 newimg,
+		objectImageOptions:          &ebiten.DrawImageOptions{},
+		positionPixelImage:          pix,
+		positionPixelOptions:        &ebiten.DrawImageOptions{},
+		rotationSpeedWhileSeparated: RandFloats(-0.02, 0.02),
+		position:                    position,
+		colorOfObject:               color,
+		width:                       float64(w),
+		height:                      float64(h),
+		coreRotation:                float64(rand.Intn(360)),
+		additionalRotation:          float64(rand.Intn(360)),
+		spaceBetweenObjects:         diff,
+		alive:                       true,
+		isSeparated:                 isseparated,
+		mass:                        float64(rand.Intn(2000) + 1000),
+		health:                      400,
+		droppedItem:                 false,
+		isRock:                      isrock,
+	}
+	m.explodeRotation = NewLinearFloatAnimation(2000*time.Millisecond, 1, 720)
+	m.explodeAlpha = NewLinearFloatAnimation(2000*time.Millisecond, 1, 0)
+	m.idleAfterSeparation = NewLinearFloatAnimation(100*time.Millisecond, 1, 0)
+	m.particlePack = NewParticlePack(100)
+	return m
+}
+
+func (fo *FloatingObject) SetRotation(rotation float64) {
+	fo.coreRotation = rotation
+}
+
+func (fo *FloatingObject) ExplodeParticles() {
+	fo.particlePack.Explode(fo.Position())
+}
+
+func (fo *FloatingObject) BoundingBox() Rect {
+	if fo.isSeparated && fo.alive {
+		return Rect{
+			Left:   fo.Position().X - fo.Width()/2,
+			Top:    fo.Position().Y - fo.Height()/2,
+			Right:  fo.Position().X + fo.Width()/2,
+			Bottom: fo.Position().Y + fo.Height()/2,
+		}
+	} else {
+		return Rect{
+			Left:   0,
+			Top:    0,
+			Right:  0,
+			Bottom: 0,
+		}
+	}
+}
+
+func (fo *FloatingObject) Width() float64 {
+	return fo.width * ScaleFactor
+}
+
+func (fo *FloatingObject) Height() float64 {
+	return fo.height * ScaleFactor
+}
+
+func (fo *FloatingObject) Position() Vec2d {
+	return Vec2d{fo.position.X + ViewPortX, fo.position.Y + ViewPortY}
+}
+
+func (fo *FloatingObject) Mass() float64 {
+	return fo.mass
+}
+
+func (fo *FloatingObject) Energy() float64 {
+	return fo.thrust
+}
+
+func (fo *FloatingObject) Applyforce(force Vec2d) {
+	fo.otherForce = fo.otherForce.Add(force)
+}
+
+func (fo *FloatingObject) React() {
+	fo.rotationSpeedWhileSeparated = RandFloats(-0.01, 0.01)
+}
+
+func (fo *FloatingObject) Status() bool {
+	return fo.alive
+}
+
+func (fo *FloatingObject) ApplyDamage(damage float64) {
+	if fo.idleAfterSeparation.Stop() {
+		if fo.health < 20 {
+			fo.ExplodeParticles()
+			fo.alive = false
+		} else {
+			fo.health -= damage
+		}
+	}
+}
+
+func (fo *FloatingObject) ItemDropped() bool {
+	return fo.droppedItem
+}
+
+func (fo *FloatingObject) SpawnItem() *Item {
+	fo.droppedItem = !fo.droppedItem
+	if fo.isRock {
+		return NewItem(fo.position, RandInts(0, 2))
+	} else {
+		return NewItem(fo.position, RandInts(2, 4))
+	}
+}
+
+func (fo *FloatingObject) UpdatePosition() {
+	fo.coreRotation += fo.rotationSpeedWhileSeparated
+	fo.position = fo.position.Add(fo.otherForce)
+}
+
+func(fo *FloatingObject)ResetPosition(){
+	if fo.position.X < 0 {
+		fo.position.X = WorldWidth - 2
+	}
+	if fo.position.X > WorldWidth {
+		fo.position.X = 1
+	}
+	if fo.position.Y < 0 {
+		fo.position.Y = WorldHeight - 2
+	}
+	if fo.position.Y > WorldHeight {
+		fo.position.Y = 1
+	}
+}
+
+func (fo *FloatingObject) DrawFloatingObject(screen *ebiten.Image, rot float64, color Fcolor) {
+	fo.objectImageOptions.GeoM.Reset()
+	fo.objectImageOptions.GeoM.Translate(-(fo.width / 2), -(fo.height / 2))
+	fo.objectImageOptions.GeoM.Rotate(45 * math.Pi / 180)
+	fo.objectImageOptions.GeoM.Rotate(fo.coreRotation + rot)
+	fo.objectImageOptions.GeoM.Translate(fo.position.X+ViewPortX, fo.position.Y+ViewPortY)
+	fo.objectImageOptions.ColorM.Scale(color.R, color.G, color.B, color.A)
+	if fo.position.X+(ViewPortX) >= -100 &&
+		fo.position.X+(ViewPortX) <= ScreenWidth+100 &&
+		fo.position.Y+(ViewPortY) >= -100 &&
+		fo.position.Y+(ViewPortY) <= ScreenHeight+100 {
+		screen.DrawImage(fo.objectImage, fo.objectImageOptions)
+	}
+}
+
+func (fo *FloatingObject) DecayAccelerationOverTime() {
+	decay := 1 - (Elapsed / fo.mass)
+
+	fo.thrust *= decay
+
+	if fo.otherForce.X < -1.0 {
+		fo.otherForce.X *= decay
+	}
+	if fo.otherForce.X > 1.0 {
+		fo.otherForce.X *= decay
+	}
+	if fo.otherForce.Y < -1.0 {
+		fo.otherForce.Y *= decay
+	}
+	if fo.otherForce.Y > 1.0 {
+		fo.otherForce.Y *= decay
+	}
+}
+
+func (fo *FloatingObject) DrawOnMap(screen *ebiten.Image, mapposX, mapwidth, mapheight, gameareawidth, gameareheight float64) {
+	fo.positionPixelOptions.GeoM.Reset()
+	fo.positionPixelOptions.GeoM.Translate(mapposX+Dreisatz(fo.Position().X-ViewPortX, mapwidth, gameareawidth),
+		Dreisatz(fo.Position().Y-ViewPortY, mapheight, gameareheight))
+	if fo.Status() {
+		screen.DrawImage(fo.positionPixelImage, fo.positionPixelOptions)
+	}
+}
+
+func (fo *FloatingObject) Draw(screen *ebiten.Image) {
+	if !fo.alive {
+		fo.explodeAlpha.Apply(Elapsed)
+		fo.explodeRotation.Apply(Elapsed)
+	}
+	fo.particlePack.Draw(screen)
+	fo.DrawFloatingObject(screen, fo.additionalRotation+fo.explodeRotation.Current(), fo.colorOfObject.SetAlpha(fo.explodeAlpha.Current()))
+}
+
+func (fo *FloatingObject) Update() error {
+	if fo.isSeparated {
+		fo.idleAfterSeparation.Apply(Elapsed)
+	}
+	fo.ResetPosition()
+	fo.DecayAccelerationOverTime()
+	fo.UpdatePosition()
+	return nil
+}

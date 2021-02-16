@@ -2,7 +2,7 @@ package playerShip
 
 import (
 	. "github.com/AWachtendorf/VivoInVacuo/v2/animation"
-	"github.com/AWachtendorf/VivoInVacuo/v2/gameObjects"
+	. "github.com/AWachtendorf/VivoInVacuo/v2/gameObjects"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/mathsandhelper"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/ui/inventory"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/ui/statusBar"
@@ -13,43 +13,36 @@ import (
 )
 
 type Ship struct {
-	image                      *ebiten.Image
-	imgOpts                    *ebiten.DrawImageOptions
-	pix                        *ebiten.Image
-	pixOpts                    *ebiten.DrawImageOptions
-	scale, imgWidth, imgHeight float64
+	shipImage                 *ebiten.Image
+	shipImageOptions          *ebiten.DrawImageOptions
+	positionPixelImage        *ebiten.Image
+	positionPixelImageOptions *ebiten.DrawImageOptions
+	scale, width, height      float64
 
 	position             Vec2d
 	rotation             float64
 	rotationThrust       float64
 	thrust, maxThrust    float64
 	rotated, accelerated bool
-	OtherForce           Vec2d
+	otherForce           Vec2d
 	mass                 float64
 
-	hullDisplay                        *ebiten.DrawImageOptions
-	shieldDisplay                      *ebiten.DrawImageOptions
-	shieldDamageAnimation              FloatAnimation
-	hullDamageAnimation                FloatAnimation
-	shipHullCurrent, shipShieldCurrent float64
-	shieldMax, hullMax                 float64
-	repairKit                          float64
-	isShieldHit, isHullHit             bool
+	shieldMax, hullMax float64
+	repairKit          float64
 
-	healthBar *StatusBar
-	shieldBar *StatusBar
-	torpedoes []*gameObjects.Torpedo
-	particles []*gameObjects.Particle
+	healthBar    *StatusBar
+	shieldBar    *StatusBar
+	torpedoes    []*Torpedo
+	particlePack ParticlePack
 
 	inventory *Inventory
-
 
 	exploding       bool
 	explodeRotation FloatAnimation
 	explodeAlpha    FloatAnimation
 	explodeScale    FloatAnimation
-	uiText            *Text
-	otherText            *Text
+	uiText          *Text
+	otherText       *Text
 }
 
 func (s *Ship) BoundingBox() Rect {
@@ -61,7 +54,15 @@ func (s *Ship) BoundingBox() Rect {
 	}
 }
 
-func (s *Ship) Torpedos() []*gameObjects.Torpedo {
+func (s *Ship) OtherText() *Text {
+	return s.otherText
+}
+
+func (s *Ship) UiText() *Text {
+	return s.uiText
+}
+
+func (s *Ship) Torpedos() []*Torpedo {
 	return s.torpedoes
 }
 
@@ -70,34 +71,35 @@ func (s *Ship) Position() Vec2d {
 }
 
 func (s *Ship) Image() *ebiten.Image {
-	return s.image
+	return s.shipImage
 }
 
 func (s *Ship) Options() *ebiten.DrawImageOptions {
-	return s.imgOpts
+	return s.shipImageOptions
 }
 
 func (s *Ship) Width() float64 {
-	return s.scale * s.imgWidth * ScaleFactor
+	return s.scale * s.width * ScaleFactor
 }
 
 func (s *Ship) Height() float64 {
-	return s.scale * s.imgHeight * ScaleFactor
+	return s.scale * s.height * ScaleFactor
 }
 
-//returns energy value(thurst basically)
 func (s *Ship) Energy() float64 {
 	return s.thrust
 }
 
-//returns ship mass
+func (s *Ship) OtherForce() Vec2d {
+	return s.otherForce
+}
+
 func (s *Ship) Mass() float64 {
 	return s.mass
 }
 
-//adds force to the ship, acting as another force
 func (s *Ship) Applyforce(force Vec2d) {
-	s.OtherForce = s.OtherForce.Add(force)
+	s.otherForce = s.otherForce.Add(force)
 }
 
 func (s *Ship) React() {
@@ -117,46 +119,40 @@ func NewShip(img, torpedoImg, partImg *ebiten.Image, torpedos int) *Ship {
 	pix := ebiten.NewImage(2, 2)
 	pix.Fill(colornames.Darkred)
 	s := &Ship{
-		image:             img,
-		imgOpts:           &ebiten.DrawImageOptions{},
-		pix:               pix,
-		pixOpts:           &ebiten.DrawImageOptions{},
-		rotation:          0,
-		rotationThrust:    0,
-		thrust:            0,
-		maxThrust:         3,
-		position:          Vec2d{X: ScreenWidth / 2, Y: ScreenHeight / 2},
-		scale:             1,
-		imgWidth:          float64(w),
-		imgHeight:         float64(h),
-		mass:              1000,
-		rotated:           false,
-		OtherForce:        Vec2d{},
-		shipHullCurrent:   200,
-		hullMax:           200,
-		shipShieldCurrent: 200,
-		shieldMax:         200,
-		repairKit:         1000,
-		inventory:         NewInventory(),
-		uiText: &Text{},
-		otherText: &Text{},
+		shipImage:                 img,
+		shipImageOptions:          &ebiten.DrawImageOptions{},
+		positionPixelImage:        pix,
+		positionPixelImageOptions: &ebiten.DrawImageOptions{},
+		rotation:                  0,
+		rotationThrust:            0,
+		thrust:                    0,
+		maxThrust:                 3,
+		position:                  Vec2d{X: ScreenWidth / 2, Y: ScreenHeight / 2},
+		scale:                     1,
+		width:                     float64(w),
+		height:                    float64(h),
+		mass:                      1000,
+		rotated:                   false,
+		otherForce:                Vec2d{},
+		hullMax:                   200,
+		shieldMax:                 200,
+		repairKit:                 1000,
+		inventory:                 NewInventory(),
+		uiText:                    &Text{},
+		otherText:                 &Text{},
 	}
-	s.imgOpts.Filter = ebiten.FilterLinear                // we want a nicer scaling
-	s.imgOpts.CompositeMode = ebiten.CompositeModeLighter
+	s.shipImageOptions.Filter = ebiten.FilterLinear // we want a nicer scaling
+	s.shipImageOptions.CompositeMode = ebiten.CompositeModeLighter
 
 	s.uiText.SetupText(15, fonts.PressStart2P_ttf)
-
+	s.otherText.SetupText(20, fonts.MPlus1pRegular_ttf)
 
 	s.healthBar = NewStatusBar(int(s.hullMax), 15, 10, 10, s.hullMax, s.repairKit, colornames.Darkred)
-	s.shieldBar = NewStatusBar(int(s.hullMax), 15, 10, 30, s.hullMax, s.repairKit, colornames.Darkcyan)
-
-	for j := 0; j < 200; j++ {
-		s.particles = append(s.particles, gameObjects.NewParticle(partImg))
-	}
+	s.shieldBar = NewStatusBar(int(s.shieldMax), 15, 10, 30, s.shieldMax, s.repairKit, colornames.Darkcyan)
 
 	for i := 0; i < torpedos; i++ {
-		s.torpedoes = append(s.torpedoes, gameObjects.NewTorpedo(torpedoImg))
+		s.torpedoes = append(s.torpedoes, NewTorpedo(torpedoImg))
 	}
-
+	s.particlePack = NewParticlePack(100)
 	return s
 }
