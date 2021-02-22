@@ -2,7 +2,7 @@ package floatingObjects
 
 import (
 	"fmt"
-	. "github.com/AWachtendorf/VivoInVacuo/v2/gameObjects"
+	"github.com/AWachtendorf/VivoInVacuo/v2/gameObjects/particleSystems"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/mathsandhelper"
 	"github.com/hajimehoshi/ebiten/v2"
 	"math"
@@ -19,7 +19,7 @@ type BundledFloatingObject struct {
 	otherForce                 Vec2d
 	mass                       float64
 	health                     float64
-	particles                  ParticlePack
+	particles                  particleSystems.ParticlePack
 }
 
 func NewBundledFloatingObject(position Vec2d, w, h float64) *BundledFloatingObject {
@@ -52,7 +52,7 @@ func NewBundledFloatingObject(position Vec2d, w, h float64) *BundledFloatingObje
 		p.mass += j.mass
 	}
 
-	p.particles = NewParticlePack(200)
+	p.particles = particleSystems.NewParticlePack(200)
 	return p
 }
 
@@ -157,7 +157,7 @@ func (b *BundledFloatingObject) RotateObjectsAroundCenter() {
 	if !b.exploded {
 		for _, j := range b.met {
 			j.SetRotation(-(b.rotation / 60))
-			j.position = RotateAroundPivot(b.position.X-15, b.position.Y+15, b.position.X, b.position.Y, b.rotation+j.spaceBetweenObjects)
+			j.position = RotatedWithOffset(b.position.X-15, b.position.Y+15, b.position.X, b.position.Y, b.rotation+j.spaceBetweenObjects)
 		}
 	} else {
 	}

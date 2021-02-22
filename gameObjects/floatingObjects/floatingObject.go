@@ -2,8 +2,8 @@ package floatingObjects
 
 import (
 	. "github.com/AWachtendorf/VivoInVacuo/v2/animation"
-	. "github.com/AWachtendorf/VivoInVacuo/v2/gameObjects"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/gameObjects/collectables"
+	"github.com/AWachtendorf/VivoInVacuo/v2/gameObjects/particleSystems"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/mathsandhelper"
 	"github.com/hajimehoshi/ebiten/v2"
 	"golang.org/x/image/colornames"
@@ -29,7 +29,7 @@ type FloatingObject struct {
 	explodeAlpha                                                  FloatAnimation
 	idleAfterSeparation                                           FloatAnimation
 	health                                                        float64
-	particlePack                                                  ParticlePack
+	particlePack                                                  particleSystems.ParticlePack
 }
 
 func NewFloatingObject(diff float64, isseparated, isrock bool, position Vec2d, color Fcolor) *FloatingObject {
@@ -62,7 +62,7 @@ func NewFloatingObject(diff float64, isseparated, isrock bool, position Vec2d, c
 	m.explodeRotation = NewLinearFloatAnimation(2000*time.Millisecond, 1, 720)
 	m.explodeAlpha = NewLinearFloatAnimation(2000*time.Millisecond, 1, 0)
 	m.idleAfterSeparation = NewLinearFloatAnimation(100*time.Millisecond, 1, 0)
-	m.particlePack = NewParticlePack(100)
+	m.particlePack = particleSystems.NewParticlePack(100)
 	return m
 }
 
@@ -204,8 +204,8 @@ func (fo *FloatingObject) DecayAccelerationOverTime() {
 
 func (fo *FloatingObject) DrawOnMap(screen *ebiten.Image, mapposX, mapwidth, mapheight, gameareawidth, gameareheight float64) {
 	fo.positionPixelOptions.GeoM.Reset()
-	fo.positionPixelOptions.GeoM.Translate(mapposX+Dreisatz(fo.Position().X-ViewPortX, mapwidth, gameareawidth),
-		Dreisatz(fo.Position().Y-ViewPortY, mapheight, gameareheight))
+	fo.positionPixelOptions.GeoM.Translate(mapposX+RuleOfThree(fo.Position().X-ViewPortX, mapwidth, gameareawidth),
+		RuleOfThree(fo.Position().Y-ViewPortY, mapheight, gameareheight))
 	if fo.Status() {
 		screen.DrawImage(fo.positionPixelImage, fo.positionPixelOptions)
 	}

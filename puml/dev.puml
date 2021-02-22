@@ -1,0 +1,567 @@
+@startuml
+namespace animation {
+    class Animation << (S,Aquamarine) >> {
+        - start time.Duration
+        - duration time.Duration
+        - running bool
+        - interpolator Interpolator
+        - state animState
+
+        - startAnim() 
+        - stopAnim() bool
+
+        + Apply(elapsed float64) bool
+
+    }
+    interface FloatAnimation  {
+        + StartA() 
+        + Stop() bool
+        + Apply(elapsed float64) bool
+        + Min() float64
+        + Max() float64
+        + Current() float64
+
+    }
+    class animation.Interpolator << (T, #FF7700) >>  {
+    }
+    class animation.animState << (T, #FF7700) >>  {
+    }
+    class linearFloatAnimation << (S,Aquamarine) >> {
+        - min float64
+
+        + StartA() 
+        + Stop() bool
+        + Min() float64
+        + Max() float64
+        + Current() float64
+
+    }
+}
+"animation.Animation" *-- "animation.linearFloatAnimation"
+
+
+namespace background {
+    class BackGround << (S,Aquamarine) >> {
+        - playerShip *Ship
+        - backgroundImage *ebiten.Image
+        - backgroundImageOptions *ebiten.DrawImageOptions
+        - maxThrust float64
+        - width float64
+        - position Vec2d
+
+        + LoopBackGround() 
+        + Draw(screen *ebiten.Image) 
+        + ConvertInputToAcceleration() 
+        + Update() error
+
+    }
+}
+
+"game.Readupdate" <|-- "background.BackGround"
+"game.Renderable" <|-- "background.BackGround"
+
+namespace collectables {
+    class Item << (S,Aquamarine) >> {
+        - itemImage *ebiten.Image
+        - itemImageOpts *ebiten.DrawImageOptions
+        - scale float64
+        - rotation float64
+        - position Vec2d
+        - mass float64
+        - collected bool
+        - itemType ItemType
+
+        + BoundingBox() Rect
+        + Position() Vec2d
+        + SetPosition(updatedPosition Vec2d) 
+        + SetCollected(isitcollected bool) 
+        + IsCollected() bool
+        + Width() float64
+        + Height() float64
+        + Type() ItemType
+        + Draw(screen *ebiten.Image) 
+        + Update() error
+
+    }
+    class ItemType << (S,Aquamarine) >> {
+        + TypeAsString() string
+
+    }
+    class collectables.ItemType << (T, #FF7700) >>  {
+    }
+}
+
+"game.Readupdate" <|-- "collectables.Item"
+"game.Renderable" <|-- "collectables.Item"
+
+namespace floatingObjects {
+    class BundledFloatingObject << (S,Aquamarine) >> {
+        - bundledObjectsImageOptions *ebiten.DrawImageOptions
+        - position Vec2d
+        - rotation float64
+        - rotationSpeed float64
+        - met []*FloatingObject
+        - exploded bool
+        - width float64
+        - otherForce Vec2d
+        - mass float64
+        - health float64
+        - particles particleSystems.ParticlePack
+
+        + FloatingObjects() []*FloatingObject
+        + ExplodeParticles() 
+        + Explode() 
+        + BoundingBox() Rect
+        + ApplyDamage(damage float64) 
+        + Width() float64
+        + Height() float64
+        + Position() Vec2d
+        + Mass() float64
+        + Applyforce(force Vec2d) 
+        + Energy() float64
+        + React() 
+        + ResetPosition() 
+        + UpdatePosition() 
+        + RotateObjectsAroundCenter() 
+        + DecayAccelerationOverTime() 
+        + Draw(screen *ebiten.Image) 
+        + Update() error
+
+    }
+    class FloatingObject << (S,Aquamarine) >> {
+        - objectImage *ebiten.Image
+        - objectImageOptions *ebiten.DrawImageOptions
+        - width float64
+        - position Vec2d
+        - spaceBetweenObjects float64
+        - thrust float64
+        - coreRotation float64
+        - alive bool
+        - colorOfObject Fcolor
+        - positionPixelImage *ebiten.Image
+        - positionPixelOptions *ebiten.DrawImageOptions
+        - otherForce Vec2d
+        - explodeRotation FloatAnimation
+        - explodeAlpha FloatAnimation
+        - idleAfterSeparation FloatAnimation
+        - health float64
+        - particlePack particleSystems.ParticlePack
+
+        + SetRotation(rotation float64) 
+        + ExplodeParticles() 
+        + BoundingBox() Rect
+        + Width() float64
+        + Height() float64
+        + Position() Vec2d
+        + Mass() float64
+        + Energy() float64
+        + Applyforce(force Vec2d) 
+        + React() 
+        + Status() bool
+        + ApplyDamage(damage float64) 
+        + ItemDropped() bool
+        + SpawnItem() *Item
+        + UpdatePosition() 
+        + ResetPosition() 
+        + DrawFloatingObject(screen *ebiten.Image, rot float64, color Fcolor) 
+        + DecayAccelerationOverTime() 
+        + DrawOnMap(screen *ebiten.Image, mapposX float64, mapwidth float64, mapheight float64, gameareawidth float64, gameareheight float64) 
+        + Draw(screen *ebiten.Image) 
+        + Update() error
+
+    }
+}
+
+"game.Readupdate" <|-- "floatingObjects.BundledFloatingObject"
+"game.Renderable" <|-- "floatingObjects.BundledFloatingObject"
+"game.Readupdate" <|-- "floatingObjects.FloatingObject"
+"game.Renderable" <|-- "floatingObjects.FloatingObject"
+"minimap.PositionPixels" <|-- "floatingObjects.FloatingObject"
+
+namespace game {
+    interface Collectable  {
+        + BoundingBox() Rect
+        + Position() Vec2d
+        + SetPosition(pos Vec2d) 
+        + SetCollected(isitcollected bool) 
+        + IsCollected() bool
+        + Type() ItemType
+
+    }
+    class Game << (S,Aquamarine) >> {
+        - viewPort *Viewport
+        - met *floatingObjects.FloatingObject
+        - scale float64
+
+        + Img *playerShip.Ship
+        + BG []*background.BackGround
+        + Renderables []Renderable
+        + Readupdate []Readupdate
+        + Objects []Object
+        + ItemOwners []ItemOwner
+        + Collectables []Collectable
+        + MiniMap *minimap.Minimap
+        + Ship *playerShip.Ship
+
+        - applyCollisions() 
+        - applyTorpedos() 
+
+        + Update() error
+        + Draw(screen *ebiten.Image) 
+        + DropItems() 
+        + Layout(outsideWidth int, outsideHeight int) (int, int)
+        + CreateNewRandomMeteoride() 
+        + CreateRandomObject() 
+        + CreateRandomObject1() 
+        + PickUpCollectables() 
+        + Setup() 
+
+    }
+    interface ItemOwner  {
+        + SpawnItem() *Item
+        + Status() bool
+        + ItemDropped() bool
+
+    }
+    interface Object  {
+        + BoundingBox() Rect
+        + Energy() float64
+        + Position() Vec2d
+        + Applyforce(force Vec2d) 
+        + Mass() float64
+        + React() 
+        + ApplyDamage(damage float64) 
+
+    }
+    interface Readupdate  {
+        + Update() error
+
+    }
+    interface Renderable  {
+        + Draw(screen *ebiten.Image) 
+
+    }
+}
+
+"game.Readupdate" <|-- "game.Game"
+"game.Renderable" <|-- "game.Game"
+
+namespace inventory {
+    class Inventory << (S,Aquamarine) >> {
+        - inventory <font color=blue>map</font>[ItemType]int
+        - visible bool
+
+        + AddToInventory(itemtype ItemType) 
+        + AllItems() <font color=blue>map</font>[ItemType]int
+        + Visible() bool
+        + SetVisible(state bool) 
+        + Update() 
+
+    }
+}
+
+
+namespace mathsandhelper {
+    class Fcolor << (S,Aquamarine) >> {
+        + R float64
+
+        + SetAlpha(a float64) Fcolor
+
+    }
+    class Rect << (S,Aquamarine) >> {
+        + Left float64
+
+        + Width() float64
+        + Height() float64
+        + Intersects(g Rect) bool
+
+    }
+    class Sector << (S,Aquamarine) >> {
+        + Xmin float64
+
+    }
+    class Time << (S,Aquamarine) >> {
+        + Elapsed float64
+
+        + Duration() float64
+        + Update() error
+        + Status() bool
+
+    }
+    class Vec2d << (S,Aquamarine) >> {
+        + X float64
+
+        + Add(o Vec2d) Vec2d
+        + Sub(o Vec2d) Vec2d
+        + Scale(x float64, y float64) Vec2d
+        + Div(x float64, y float64) Vec2d
+        + Abs() Vec2d
+        + Norm() Vec2d
+        + Neg() Vec2d
+        + Length() float64
+
+    }
+}
+
+"game.Readupdate" <|-- "mathsandhelper.Time"
+
+namespace minimap {
+    class Minimap << (S,Aquamarine) >> {
+        - mapImage *ebiten.Image
+        - mapImageOptions *ebiten.DrawImageOptions
+        - mapBorderImage *ebiten.Image
+        - mapBorderImageOptions *ebiten.DrawImageOptions
+        - gameArea *Viewport
+        - questMarker []QuestMarker
+        - showmarker bool
+        - position Vec2d
+        - width float64
+
+        + Pixels []PositionPixels
+
+        + NewQuestMarker(secX float64, secY float64) QuestMarker
+        + AppendQuestMarkers(marker QuestMarker) 
+        + RemoveQuestMarkers(marker QuestMarker) 
+        + DrawQuestMarker(screen *ebiten.Image) 
+        + PositionOfMarker(questMarker QuestMarker) Vec2d
+        + Draw(screen *ebiten.Image) 
+        + AppendPositionPixels(test PositionPixels) 
+        + DrawPixels(screen *ebiten.Image) 
+        + Update() error
+
+    }
+    interface PositionPixels  {
+        + DrawOnMap(screen *ebiten.Image, mapposX float64, mapwidth float64, mapheight float64, gameareawidth float64, gameareheight float64) 
+
+    }
+    class QuestMarker << (S,Aquamarine) >> {
+        - questMarker *ebiten.Image
+        - questMarkerOpts *ebiten.DrawImageOptions
+        - sectorX float64
+        - questMarkerWidth float64
+        - markerColor Fcolor
+
+    }
+}
+
+"game.Readupdate" <|-- "minimap.Minimap"
+"game.Renderable" <|-- "minimap.Minimap"
+
+namespace particleSystems {
+    class Particle << (S,Aquamarine) >> {
+        - particleImage *ebiten.Image
+        - particleImageOptions *ebiten.DrawImageOptions
+        - scale float64
+        - position Vec2d
+        - direction Vec2d
+        - speed float64
+        - lifetime time.Duration
+        - starttime time.Duration
+        - current time.Duration
+        - available bool
+        - particleAlpha FloatAnimation
+
+        - drawPart(screen *ebiten.Image, speed float64) 
+
+        + OnDraw(screen *ebiten.Image) 
+        + IsAvailable() bool
+        + CheckState() bool
+        + Start(angle float64, startPos Vec2d, speed float64) 
+
+    }
+    class ParticlePack << (S,Aquamarine) >> {
+        - particles []*Particle
+
+        + Particles() []*Particle
+        + Explode(position Vec2d) 
+        + Nova(position Vec2d) 
+        + UseForThrust(angle float64, startPos Vec2d, speed float64) 
+        + Draw(screen *ebiten.Image) 
+
+    }
+    class StaticParticle << (S,Aquamarine) >> {
+        - staticParticleImage *ebiten.Image
+        - staticParticleImageOptions *ebiten.DrawImageOptions
+        - scale float64
+        - position Vec2d
+
+        + Update() error
+        + Draw(screen *ebiten.Image) 
+
+    }
+}
+
+"game.Renderable" <|-- "particleSystems.ParticlePack"
+"game.Readupdate" <|-- "particleSystems.StaticParticle"
+"game.Renderable" <|-- "particleSystems.StaticParticle"
+
+namespace playerShip {
+    class Ship << (S,Aquamarine) >> {
+        - shipImage *ebiten.Image
+        - shipImageOptions *ebiten.DrawImageOptions
+        - positionPixelImage *ebiten.Image
+        - positionPixelImageOptions *ebiten.DrawImageOptions
+        - scale float64
+        - position Vec2d
+        - rotation float64
+        - rotationThrust float64
+        - thrust float64
+        - rotated bool
+        - otherForce Vec2d
+        - mass float64
+        - shieldMax float64
+        - repairKit float64
+        - healthBar *StatusBar
+        - shieldBar *StatusBar
+        - torpedoes []*torpedo.Torpedo
+        - particlePack particleSystems.ParticlePack
+        - inventory *Inventory
+        - exploding bool
+        - explodeRotation FloatAnimation
+        - explodeAlpha FloatAnimation
+        - explodeScale FloatAnimation
+        - uiText *Text
+        - otherText *Text
+
+        - fireTorpedo() 
+        - novaParticle() 
+        - applyParticles() 
+
+        + Draw(screen *ebiten.Image) 
+        + DrawInventory(screen *ebiten.Image) 
+        + ReadAllDrawCommands(screen *ebiten.Image, rotationRadiant float64) 
+        + DrawShipOnScreen(screen *ebiten.Image, rotationRadiant float64) 
+        + DrawOnMap(screen *ebiten.Image, mapposX float64, mapwidth float64, mapheight float64, gameareawidth float64, gameareheight float64) 
+        + ApplyDamage(damage float64) 
+        + BoundingBox() Rect
+        + OtherText() *Text
+        + UiText() *Text
+        + Torpedos() []*torpedo.Torpedo
+        + Position() Vec2d
+        + Image() *ebiten.Image
+        + Options() *ebiten.DrawImageOptions
+        + Width() float64
+        + Height() float64
+        + Energy() float64
+        + OtherForce() Vec2d
+        + Mass() float64
+        + Applyforce(force Vec2d) 
+        + React() 
+        + Status() bool
+        + Inventory() *Inventory
+        + Update() error
+        + ProcessInput() float64
+
+    }
+}
+
+"game.Readupdate" <|-- "playerShip.Ship"
+"game.Renderable" <|-- "playerShip.Ship"
+"minimap.PositionPixels" <|-- "playerShip.Ship"
+
+namespace statusBar {
+    class StatusBar << (S,Aquamarine) >> {
+        - img *ebiten.Image
+        - statusBarDisplay *ebiten.DrawImageOptions
+        - width int
+        - position Vec2d
+        - decreaseAnimation FloatAnimation
+        - currentBarValue float64
+        - maxBarValue float64
+        - repairKit float64
+        - onHit bool
+        - color color.RGBA
+
+        - repairHullAndRechargeShield() 
+
+        + Draw(screen *ebiten.Image) 
+        + Position() Vec2d
+        + Percentage() float64
+        + ApplyDamage(damage float64) 
+        + Decrease(damage float64) 
+        + Update() 
+
+    }
+}
+
+"game.Renderable" <|-- "statusBar.StatusBar"
+
+namespace textOnScreen {
+    class Text << (S,Aquamarine) >> {
+        - font1 font.Face
+        - fontsize float64
+
+        + SetupText(size float64, font2 []byte) 
+        + TextToScreen(screen *ebiten.Image, X int, Y int, String string, line int) 
+
+    }
+}
+
+
+namespace torpedo {
+    class Torpedo << (S,Aquamarine) >> {
+        - torpedoImage *ebiten.Image
+        - torpedoimageOptions *ebiten.DrawImageOptions
+        - width float64
+        - scale float64
+        - position Vec2d
+        - dir Vec2d
+        - aniLayer0Degree float64
+        - aniLayer1Degree float64
+        - color0 Fcolor
+        - color1 Fcolor
+        - state TorpedoLifeState
+        - explodingAlpha FloatAnimation
+        - explodingScale FloatAnimation
+        - lifetime FloatAnimation
+        - lifetimeDuration time.Duration
+
+        + Damage float64
+
+        - drawImg(screen *ebiten.Image, rot float64, scale float64, color Fcolor) 
+
+        + IsAvailable() bool
+        + IsActive() bool
+        + Explode() 
+        + Reset() 
+        + Fire(startPos Vec2d, rotDegree float64) 
+        + Width() float64
+        + Height() float64
+        + BoundingBox() Rect
+        + Position() Vec2d
+        + Hits(state bool) bool
+        + OnDraw(screen *ebiten.Image) 
+
+    }
+    class torpedo.TorpedoLifeState << (T, #FF7700) >>  {
+    }
+}
+
+
+namespace viewport {
+    class Viewport << (S,Aquamarine) >> {
+        - width float64
+        - position Vec2d
+        - playerShip *Ship
+        - sectors int
+
+        + CalculateSectorBounds(X float64, Y float64) Sector
+        + Width() float64
+        + Height() float64
+        + WhichSector() (int, int)
+        + SpawnInSectorRandom(X float64, Y float64) Vec2d
+        + ShipIsInWhichSector(screen *ebiten.Image) 
+        + Status() bool
+        + UpdatePosition() 
+        + Update() error
+
+    }
+}
+
+"game.Readupdate" <|-- "viewport.Viewport"
+
+"__builtin__.int" #.. "animation.animState"
+"__builtin__.int" #.. "collectables.ItemType"
+"__builtin__.int" #.. "torpedo.TorpedoLifeState"
+"animation.<font color=blue>func</font>(float64) " #.. "animation.Interpolator"
+@enduml

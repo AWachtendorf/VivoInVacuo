@@ -1,4 +1,4 @@
-package gameObjects
+package torpedo
 
 import (
 	. "github.com/AWachtendorf/VivoInVacuo/v2/animation"
@@ -103,10 +103,10 @@ func (t *Torpedo) Height() float64 {
 func (t *Torpedo) BoundingBox() Rect {
 	visibleStyle := 16.0
 	return Rect{
-		Left:   t.position.X - t.Width()/visibleStyle,
-		Top:    t.position.Y - t.Height()/visibleStyle,
-		Right:  t.position.X + t.Width()/visibleStyle,
-		Bottom: t.position.Y + t.Height()/visibleStyle}
+		Left:   ViewPortX +t.position.X - t.Width()/visibleStyle,
+		Top:     ViewPortY+t.position.Y - t.Height()/visibleStyle,
+		Right:   ViewPortX + t.position.X + t.Width()/visibleStyle,
+		Bottom: ViewPortY+t.position.Y + t.Height()/visibleStyle}
 }
 
 func (t *Torpedo) Position() Vec2d {
@@ -119,7 +119,7 @@ func (t *Torpedo) Hits(state bool) bool {
 }
 
 func (t *Torpedo) OnDraw(screen *ebiten.Image) {
-	speed := Elapsed // just some experimental value
+	speed := Elapsed  // just some experimental value
 
 	switch t.state {
 	case Armed:
@@ -162,7 +162,7 @@ func (t *Torpedo) drawImg(screen *ebiten.Image, rot float64, scale float64, colo
 	t.torpedoimageOptions.GeoM.Rotate(rot * (math.Pi / 180))         // let it rotate fast
 	t.torpedoimageOptions.GeoM.Scale(ScaleFactor, ScaleFactor)       // use the display scale, so that the gameObjects has visually the same size
 	t.torpedoimageOptions.GeoM.Scale(t.scale*scale, t.scale*scale)   // scale the local object coordinates
-	t.torpedoimageOptions.GeoM.Translate(t.position.X, t.position.Y) // move gameObjects center to the actual coordinates
+	t.torpedoimageOptions.GeoM.Translate(t.position.X+ViewPortX, t.position.Y+ViewPortY) // move gameObjects center to the actual coordinates
 
 	t.torpedoimageOptions.ColorM.Reset()
 	t.torpedoimageOptions.ColorM.Scale(color.R, color.G, color.B, color.A) // colorize the texture

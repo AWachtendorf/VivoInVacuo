@@ -44,8 +44,8 @@ func (s *Ship) DrawShipOnScreen(screen *ebiten.Image, rotationRadiant float64) {
 
 func (s *Ship) DrawOnMap(screen *ebiten.Image, mapposX, mapwidth, mapheight, gameareawidth, gameareheight float64) {
 	s.positionPixelImageOptions.GeoM.Reset()
-	s.positionPixelImageOptions.GeoM.Translate(mapposX+Dreisatz(s.Position().X-ViewPortX, mapwidth, gameareawidth),
-		Dreisatz(s.Position().Y-ViewPortY, mapheight, gameareheight))
+	s.positionPixelImageOptions.GeoM.Translate(mapposX+RuleOfThree(s.Position().X-ViewPortX, mapwidth, gameareawidth),
+		RuleOfThree(s.Position().Y-ViewPortY, mapheight, gameareheight))
 	if s.Status() {
 		screen.DrawImage(s.positionPixelImage, s.positionPixelImageOptions)
 			}

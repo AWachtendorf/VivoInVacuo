@@ -20,7 +20,7 @@ func (t *Time) Duration() float64 {
 
 func (t *Time) Update() error {
 	t.Elapsed = t.Duration()
-	Elapsed = t.Elapsed
+	Elapsed =  t.Elapsed
 
 	return nil
 }

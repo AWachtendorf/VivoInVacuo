@@ -6,9 +6,9 @@ import (
 	. "github.com/AWachtendorf/VivoInVacuo/v2/assets"
 	"github.com/AWachtendorf/VivoInVacuo/v2/gameEnvorinment/background"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/gameEnvorinment/viewport"
-	"github.com/AWachtendorf/VivoInVacuo/v2/gameObjects"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/gameObjects/collectables"
 	"github.com/AWachtendorf/VivoInVacuo/v2/gameObjects/floatingObjects"
+	"github.com/AWachtendorf/VivoInVacuo/v2/gameObjects/particleSystems"
 	"github.com/AWachtendorf/VivoInVacuo/v2/gameObjects/playerShip"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/mathsandhelper"
 	"github.com/AWachtendorf/VivoInVacuo/v2/ui/minimap"
@@ -66,7 +66,7 @@ type Game struct {
 	MiniMap      *minimap.Minimap
 	Ship         *playerShip.Ship
 	met          *floatingObjects.FloatingObject
-	Scale        float64
+	scale        float64
 }
 
 func (g *Game) Update() error {
@@ -81,6 +81,9 @@ func (g *Game) Update() error {
 	g.applyCollisions()
 	g.applyTorpedos()
 	g.PickUpCollectables()
+	if ebiten.IsKeyPressed(ebiten.KeyJ) {
+		g.MiniMap.RemoveQuestMarkers(g.MiniMap.NewQuestMarker(4, 8))
+	}
 	return nil
 }
 
@@ -159,6 +162,7 @@ func (g *Game) CreateRandomObject1() {
 	g.Renderables = append(g.Renderables, obj)
 	g.ItemOwners = append(g.ItemOwners, obj)
 }
+
 func (g *Game) PickUpCollectables() {
 	ship := g.Objects[0]
 	for _, objB := range g.Collectables { // compare it only with all subsequent object, if they match (not with itself and not vice versa)
@@ -270,15 +274,11 @@ func (g *Game) Setup() {
 
 	g.BG = append(g.BG, bg, bg1, bg2)
 	g.viewPort = NewViewport(-WorldWidth/2, -WorldHeight/2, WorldWidth, WorldHeight, ship, 15)
-	abc := gameObjects.AddAsquare(float64(rand.Intn(500)), float64(rand.Intn(500)), 50, 50)
-	abc1 := gameObjects.AddAsquare(float64(rand.Intn(500)), float64(rand.Intn(500)), 50, 50)
-	abc2 := gameObjects.AddAsquare(float64(rand.Intn(500)), float64(rand.Intn(500)), 50, 50)
-	abc3 := gameObjects.AddAsquare(float64(rand.Intn(500)), float64(rand.Intn(500)), 50, 50)
 
-	mmap := minimap.NewMinimap(ScreenWidth/5, ScreenWidth/5, ScreenWidth-ScreenWidth/5-4, 4, g.viewPort, colornames.Black)
+	mmap := minimap.NewMinimap(ScreenWidth/5, ScreenWidth/5, ScreenWidth-ScreenWidth/5-4, 4, g.viewPort)
 	g.MiniMap = mmap
 
-	mmap.Pixels = append(mmap.Pixels, ship, abc, abc1, abc2, abc3)
+	mmap.Pixels = append(mmap.Pixels, ship)
 
 	times := &Time{}
 	g.Objects = append(g.Objects, ship)
@@ -287,9 +287,9 @@ func (g *Game) Setup() {
 		g.CreateNewRandomMeteoride()
 	}
 	//TODO: Example
-g.MiniMap.AppendQuestMarkers(g.MiniMap.NewQuestMarker(6,2))
-	g.MiniMap.AppendQuestMarkers(g.MiniMap.NewQuestMarker(1,1))
-	g.MiniMap.AppendQuestMarkers(g.MiniMap.NewQuestMarker(4,8))
+	g.MiniMap.AppendQuestMarkers(g.MiniMap.NewQuestMarker(6, 2))
+	g.MiniMap.AppendQuestMarkers(g.MiniMap.NewQuestMarker(1, 1))
+	g.MiniMap.AppendQuestMarkers(g.MiniMap.NewQuestMarker(4, 8))
 
 	for i := 0; i < 20; i++ {
 		g.CreateRandomObject()
@@ -297,7 +297,7 @@ g.MiniMap.AppendQuestMarkers(g.MiniMap.NewQuestMarker(6,2))
 	}
 
 	for i := 0; i < 30000; i++ {
-		g.Renderables = append(g.Renderables, gameObjects.NewStaticParticle(RandFloats(0, WorldWidth), RandFloats(0, WorldHeight), RandFloats(1, 2)))
+		g.Renderables = append(g.Renderables, particleSystems.NewStaticParticle(RandFloats(0, WorldWidth), RandFloats(0, WorldHeight), RandFloats(1, 2)))
 	}
 
 	for i := 0; i < 300; i++ {
@@ -305,7 +305,7 @@ g.MiniMap.AppendQuestMarkers(g.MiniMap.NewQuestMarker(6,2))
 		if i > 150 {
 			max = 300 - float64(i) + RandFloats(50, 50)
 		}
-		g.Renderables = append(g.Renderables, gameObjects.NewStaticParticle(float64(WorldWidth/10+i)+RandFloats(-max, max)+RandFloats(-max, max), float64(WorldHeight/10+i)+RandFloats(-max, max)+RandFloats(-max, max), RandFloats(1, 5)))
+		g.Renderables = append(g.Renderables, particleSystems.NewStaticParticle(float64(WorldWidth/10+i)+RandFloats(-max, max)+RandFloats(-max, max), float64(WorldHeight/10+i)+RandFloats(-max, max)+RandFloats(-max, max), RandFloats(1, 5)))
 	}
 
 	for i := 0; i < 300; i++ {
@@ -313,7 +313,7 @@ g.MiniMap.AppendQuestMarkers(g.MiniMap.NewQuestMarker(6,2))
 		if i > 150 {
 			max = 300 - float64(i) + RandFloats(50, 50)
 		}
-		g.Renderables = append(g.Renderables, gameObjects.NewStaticParticle(float64(WorldWidth/50+i)+RandFloats(-max, max)+RandFloats(-max, max), float64(WorldHeight/30+i)+RandFloats(-max, max)+RandFloats(-max, max), RandFloats(1, 5)))
+		g.Renderables = append(g.Renderables, particleSystems.NewStaticParticle(float64(WorldWidth/50+i)+RandFloats(-max, max)+RandFloats(-max, max), float64(WorldHeight/30+i)+RandFloats(-max, max)+RandFloats(-max, max), RandFloats(1, 5)))
 	}
 
 	for i := 0; i < 300; i++ {
@@ -321,13 +321,11 @@ g.MiniMap.AppendQuestMarkers(g.MiniMap.NewQuestMarker(6,2))
 		if i > 150 {
 			max = 300 - float64(i) + RandFloats(50, 50)
 		}
-		g.Renderables = append(g.Renderables, gameObjects.NewStaticParticle(float64(WorldWidth/60+i)+RandFloats(-max, max)+RandFloats(-max, max), float64(WorldHeight/70+i)+RandFloats(-max, max)+RandFloats(-max, max), RandFloats(1, 5)))
+		g.Renderables = append(g.Renderables, particleSystems.NewStaticParticle(float64(WorldWidth/60+i)+RandFloats(-max, max)+RandFloats(-max, max), float64(WorldHeight/70+i)+RandFloats(-max, max)+RandFloats(-max, max), RandFloats(1, 5)))
 	}
 
-	g.Renderables = append(g.Renderables, bg, bg1, bg2, ship, g.viewPort, abc, abc1, abc2, abc3, mmap)
+	g.Renderables = append(g.Renderables, bg, bg1, bg2, ship, mmap)
 
-	g.Readupdate = append(g.Readupdate, bg, bg1, bg2, ship, g.viewPort, abc, abc1, abc2, abc3, times, mmap)
-
-	g.Objects = append(g.Objects, abc, abc1, abc2, abc3)
+	g.Readupdate = append(g.Readupdate, bg, bg1, bg2, ship, g.viewPort, times, mmap)
 
 }

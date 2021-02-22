@@ -13,10 +13,19 @@ import (
 type Viewport struct {
 	width, height float64
 	position      Vec2d
-	coordinates   Vec2d
 	playerShip    *Ship
-	otherForce    Vec2d
 	sectors       int
+}
+
+func NewViewport(initalX, initalY, width, height float64, ship *Ship, amountOfSectors int) *Viewport {
+	vp := &Viewport{
+		width:      width,
+		height:     height,
+		position:   Vec2d{X: initalX, Y: initalY},
+		playerShip: ship,
+		sectors:    amountOfSectors,
+	}
+	return vp
 }
 
 func (v *Viewport) CalculateSectorBounds(X, Y float64) Sector {
@@ -68,21 +77,6 @@ func (v *Viewport) ShipIsInWhichSector(screen *ebiten.Image) {
 
 }
 
-func NewViewport(initalX, initalY, width, height float64, ship *Ship, amountOfSectors int) *Viewport {
-	vp := &Viewport{
-		width:      width,
-		height:     height,
-		position:   Vec2d{X: initalX, Y: initalY},
-		playerShip: ship,
-		sectors:    amountOfSectors,
-	}
-	return vp
-}
-
-func (v *Viewport) Applyforce(force Vec2d) {
-	v.otherForce = v.otherForce.Add(force)
-}
-
 func (v *Viewport) Status() bool {
 	return true
 }
@@ -112,9 +106,6 @@ func (v *Viewport) UpdatePosition() {
 	v.position = v.position.Sub(dir)
 }
 
-func (v *Viewport) Draw(screen *ebiten.Image) {
-
-}
 
 func (v *Viewport) Update() error {
 	ViewPortX = v.position.X

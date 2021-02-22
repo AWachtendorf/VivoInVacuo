@@ -12,8 +12,8 @@ type Inventory struct {
 }
 
 func NewInventory() *Inventory {
-	mappimap := make(map[ItemType]int)
-	inv := &Inventory{inventory: mappimap}
+	invMap := make(map[ItemType]int)
+	inv := &Inventory{inventory: invMap}
 	return inv
 }
 

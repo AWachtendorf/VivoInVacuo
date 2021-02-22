@@ -1,4 +1,4 @@
-package gameObjects
+package particleSystems
 
 import (
 	. "github.com/AWachtendorf/VivoInVacuo/v2/mathsandhelper"
