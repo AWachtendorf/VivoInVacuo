@@ -7,17 +7,19 @@ import (
 	"math"
 )
 
+// An Item is a collectable object.
 type Item struct {
-	itemImage            *ebiten.Image
-	itemImageOpts        *ebiten.DrawImageOptions
-	scale, width, height float64
-	rotation, rotationthrust             float64
-	position             Vec2d
-	mass                 float64
-	collected            bool
-	itemType             ItemType
+	itemImage               *ebiten.Image
+	itemImageOpts           *ebiten.DrawImageOptions
+	scale, width, height    float64
+	rotation, rotationSpeed float64
+	position                Vec2d
+	mass                    float64
+	collected               bool
+	itemType                ItemType
 }
 
+// NewItem creates a new Item.
 func NewItem(pos Vec2d, itemtype int) *Item {
 	image := ebiten.NewImage(15, 15)
 	w, h := image.Size()
@@ -27,30 +29,26 @@ func NewItem(pos Vec2d, itemtype int) *Item {
 		scale:         1,
 		width:         float64(w),
 		height:        float64(h),
-		rotationthrust: RandFloats(-0.001,0.001),
+		rotationSpeed: RandFloats(-0.001, 0.001),
 		position:      pos,
 		mass:          0,
 		collected:     false,
+		itemType:      ItemType(itemtype),
 	}
 
-	i.itemType = ItemType(itemtype)
 	switch i.itemType {
 	case ore:
 		image.Fill(colornames.Darkgray)
-		break
 	case minerals:
 		image.Fill(colornames.Cyan)
-		break
 	case electronics:
 		image.Fill(colornames.Green)
-		break
 	case metal:
 		image.Fill(colornames.Lightgray)
-		break
 	default:
 		image.Fill(colornames.Darkgray)
-		break
 	}
+
 	return i
 }
 
@@ -80,7 +78,7 @@ func (i *Item) IsCollected() bool {
 }
 
 func (i *Item) Width() float64 {
-	return  i.width
+	return i.width
 }
 
 func (i *Item) Height() float64 {
@@ -91,6 +89,17 @@ func (i *Item) Type() ItemType {
 	return i.itemType
 }
 
+// FollowPosition makes the Item follow another position.
+// This is used to make the Ship collect the Item.
+func (i *Item) FollowPosition(pos1, pos2 Vec2d) Vec2d {
+	pos := pos1.Sub(pos2).Norm().Scale(3, 3)
+	pos2.X += pos.X
+	pos2.Y += pos.Y
+
+	return Vec2d{X: pos2.X, Y: pos2.Y}
+}
+
+// Draw draws the Item to screen.
 func (i *Item) Draw(screen *ebiten.Image) {
 	if !i.collected {
 		i.itemImageOpts.GeoM.Reset()
@@ -98,11 +107,19 @@ func (i *Item) Draw(screen *ebiten.Image) {
 		i.itemImageOpts.GeoM.Rotate(i.rotation)
 		i.itemImageOpts.GeoM.Rotate(2 * (math.Pi / 360))
 		i.itemImageOpts.GeoM.Translate(i.position.X+ViewPortX, i.position.Y+ViewPortY)
-		screen.DrawImage(i.itemImage, i.itemImageOpts)
+
+		if i.position.X+(ViewPortX) >= -100 &&
+			i.position.X+(ViewPortX) <= ScreenWidth+100 &&
+			i.position.Y+(ViewPortY) >= -100 &&
+			i.position.Y+(ViewPortY) <= ScreenHeight+100 {
+			screen.DrawImage(i.itemImage, i.itemImageOpts)
+		}
 	}
 }
 
+// Update just rotates the Item slowly.
 func (i *Item) Update() error {
-	i.rotation += Elapsed * i.rotationthrust
+	i.rotation += Elapsed * i.rotationSpeed
+
 	return nil
 }

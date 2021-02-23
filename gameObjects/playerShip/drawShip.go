@@ -19,6 +19,13 @@ func (s *Ship) DrawInventory(screen *ebiten.Image) {
 	}
 }
 
+// DisplayShipSectorPosition writes the current sector the Ship is flying trough to the screen.
+func(s *Ship) DisplayShipSectorPosition(screen *ebiten.Image) {
+	X, Y := ObjectIsInWhichSector(s.position)
+	s.OtherText().TextToScreen(screen, 10, ScreenHeight-10, fmt.Sprintf("Sector %x, %x", X, Y), 0)
+
+}
+
 func (s *Ship) ReadAllDrawCommands(screen *ebiten.Image, rotationRadiant float64) {
 	for _, t := range s.torpedoes {
 		t.OnDraw(screen)
@@ -26,7 +33,7 @@ func (s *Ship) ReadAllDrawCommands(screen *ebiten.Image, rotationRadiant float64
 	s.particlePack.Draw(screen)
 
 	s.DrawInventory(screen)
-
+	s.DisplayShipSectorPosition(screen)
 	s.healthBar.Draw(screen)
 	s.shieldBar.Draw(screen)
 	s.DrawShipOnScreen(screen, rotationRadiant)

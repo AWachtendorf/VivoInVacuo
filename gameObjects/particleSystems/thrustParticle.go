@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-//struct for particles based on the setup that ship and torpedoes have
+
 type Particle struct {
 	particleImage        *ebiten.Image
 	particleImageOptions *ebiten.DrawImageOptions
@@ -27,18 +27,18 @@ type Particle struct {
 	particleAlpha FloatAnimation
 }
 
-//onDraw method for particles
+
 func (p *Particle) OnDraw(screen *ebiten.Image) {
 	p.CheckState()
 	p.drawPart(screen, p.speed)
 }
 
-//checks if particles are available
+
 func (p *Particle) IsAvailable() bool {
 	return p.available
 }
 
-//checks state of particles. Particles get reset after certain amount of time
+
 func (p *Particle) CheckState() bool {
 	p.current = time.Duration(time.Now().UnixNano())
 	if p.current > p.starttime+p.lifetime {
@@ -62,9 +62,9 @@ func (p *Particle) Start(angle float64, startPos Vec2d, speed float64) {
 
 }
 
-//particles are only drawn as long as they AREN'T available, otherwise they don't disappear
+// Particles are only drawn as long as they AREN'T available
 func (p *Particle) drawPart(screen *ebiten.Image, speed float64) {
-	//p.speed = 3 * ScaleFactor
+
 	if !p.available {
 		p.particleImageOptions.GeoM.Reset()
 		p.particleImageOptions.ColorM.Reset()
@@ -73,15 +73,15 @@ func (p *Particle) drawPart(screen *ebiten.Image, speed float64) {
 		p.particleAlpha.Apply(Elapsed)
 		p.particleImageOptions.GeoM.Scale(p.scale, p.scale)
 		p.particleImageOptions.GeoM.Rotate(2 * (math.Pi / 180))
-		//updates position of article
+
 		p.position = p.position.Add(p.direction.Scale(speed, speed))
 		p.particleImageOptions.GeoM.Translate(p.position.X, p.position.Y)
-		//draws the actual staticParticleImage
+
 		screen.DrawImage(p.particleImage, p.particleImageOptions)
 	}
 }
 
-//creates a particle. Is called in newship and newtorpedo
+
 func NewParticle(image *ebiten.Image) *Particle {
 	part := &Particle{
 		particleImage:        image,

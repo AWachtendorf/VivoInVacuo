@@ -1,4 +1,4 @@
-package floatingObjects
+package floatingobjects
 
 import (
 	"fmt"
@@ -8,6 +8,8 @@ import (
 	"math"
 )
 
+// BundledFloatingObject is a bunch of FloatingObjects.
+// This way we may design Meteorites or Balls of Scrap Metal.
 type BundledFloatingObject struct {
 	bundledObjectsImageOptions *ebiten.DrawImageOptions
 	position                   Vec2d
@@ -23,7 +25,6 @@ type BundledFloatingObject struct {
 }
 
 func NewBundledFloatingObject(position Vec2d, w, h float64) *BundledFloatingObject {
-
 	p := &BundledFloatingObject{
 		bundledObjectsImageOptions: &ebiten.DrawImageOptions{},
 		rotation:                   0,
@@ -40,7 +41,7 @@ func NewBundledFloatingObject(position Vec2d, w, h float64) *BundledFloatingObje
 	}
 
 	for j := 1; j < RandInts(3, 5); j++ {
-		p.met = append(p.met, NewFloatingObject(float64((360/j)+RandInts(0, 360)), false, true, Vec2d{0, 0}, Fcolor{
+		p.met = append(p.met, NewFloatingObject(float64((360/j)+RandInts(0, 360)), false, true, Vec2d{}, Fcolor{
 			R: 1,
 			G: 1,
 			B: 1,
@@ -53,6 +54,7 @@ func NewBundledFloatingObject(position Vec2d, w, h float64) *BundledFloatingObje
 	}
 
 	p.particles = particleSystems.NewParticlePack(200)
+
 	return p
 }
 
@@ -67,11 +69,11 @@ func (b *BundledFloatingObject) ExplodeParticles() {
 func (b *BundledFloatingObject) Explode() {
 	b.exploded = true
 	b.ExplodeParticles()
+
 	for _, j := range b.met {
 		j.isSeparated = true
 		j.coreRotation = float64(RandInts(0, 360))
 		j.thrust = RandFloats(-1, 1)
-
 	}
 }
 
@@ -83,13 +85,13 @@ func (b *BundledFloatingObject) BoundingBox() Rect {
 			Right:  ViewPortX + b.position.X + b.Width()/2,
 			Bottom: ViewPortY + b.position.Y + b.Height()/2,
 		}
-	} else {
-		return Rect{
-			Left:   0,
-			Top:    0,
-			Right:  0,
-			Bottom: 0,
-		}
+	}
+
+	return Rect{
+		Left:   0,
+		Top:    0,
+		Right:  0,
+		Bottom: 0,
 	}
 }
 
@@ -110,21 +112,17 @@ func (b *BundledFloatingObject) Height() float64 {
 }
 
 func (b *BundledFloatingObject) Position() Vec2d {
-	return Vec2d{b.position.X + ViewPortX, b.position.Y + ViewPortY}
+	return Vec2d{X: b.position.X + ViewPortX, Y: b.position.Y + ViewPortY}
 }
 
-//returns ship mass
 func (b *BundledFloatingObject) Mass() float64 {
 	return b.mass
 }
 
-//adds force to the ship, acting as another force
 func (b *BundledFloatingObject) Applyforce(force Vec2d) {
 	b.otherForce = b.otherForce.Add(force)
-
 }
 
-//returns energy value(thurst basically)
 func (b *BundledFloatingObject) Energy() float64 {
 	return b.thrust
 }
@@ -137,12 +135,15 @@ func (b *BundledFloatingObject) ResetPosition() {
 	if b.position.X < 0 {
 		b.position.X = WorldWidth - 2
 	}
+
 	if b.position.X > WorldWidth {
 		b.position.X = 1
 	}
+
 	if b.position.Y > WorldHeight {
 		b.position.Y = 1
 	}
+
 	if b.position.Y < 0 {
 		b.position.Y = WorldHeight - 2
 	}
@@ -157,9 +158,10 @@ func (b *BundledFloatingObject) RotateObjectsAroundCenter() {
 	if !b.exploded {
 		for _, j := range b.met {
 			j.SetRotation(-(b.rotation / 60))
-			j.position = RotatedWithOffset(b.position.X-15, b.position.Y+15, b.position.X, b.position.Y, b.rotation+j.spaceBetweenObjects)
+			j.position = RotatedWithOffset(b.position.X-15, b.position.Y+15,
+				b.position.X, b.position.Y,
+				b.rotation+j.spaceBetweenObjects)
 		}
-	} else {
 	}
 
 	for _, j := range b.met {
@@ -178,12 +180,15 @@ func (b *BundledFloatingObject) DecayAccelerationOverTime() {
 	if b.otherForce.X < -1.0 {
 		b.otherForce.X *= decay
 	}
+
 	if b.otherForce.X > 1.0 {
 		b.otherForce.X *= decay
 	}
+
 	if b.otherForce.Y < -1.0 {
 		b.otherForce.Y *= decay
 	}
+
 	if b.otherForce.Y > 1.0 {
 		b.otherForce.Y *= decay
 	}
@@ -196,6 +201,7 @@ func (b *BundledFloatingObject) Draw(screen *ebiten.Image) {
 	b.bundledObjectsImageOptions.GeoM.Rotate(2 * (math.Pi / 360))
 	b.bundledObjectsImageOptions.GeoM.Rotate(b.rotation)
 	b.bundledObjectsImageOptions.GeoM.Translate(b.position.X+ViewPortX, b.position.Y+ViewPortY)
+
 	for _, j := range b.met {
 		j.Draw(screen)
 	}
@@ -206,5 +212,6 @@ func (b *BundledFloatingObject) Update() error {
 	b.DecayAccelerationOverTime()
 	b.RotateObjectsAroundCenter()
 	b.UpdatePosition()
+
 	return nil
 }

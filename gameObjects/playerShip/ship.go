@@ -115,7 +115,7 @@ func (s *Ship) Inventory() *Inventory {
 	return s.inventory
 }
 
-func NewShip(img, torpedoImg, partImg *ebiten.Image, torpedos int) *Ship {
+func NewShip(img, torpedoImg *ebiten.Image, torpedos int) *Ship {
 	w, h := img.Size()
 	pix := ebiten.NewImage(2, 2)
 	pix.Fill(colornames.Darkred)

@@ -12,8 +12,8 @@ func RandInts(min, max int) int { //helper func to return a random integer
 }
 
 func RandFloats(min, max float64) float64 {
-	return min + rand.Float64()*(max-min)
 
+	return min + rand.Float64()*(max-min)
 }
 
 func RotatedWithOffset(rotatepointX, rotatepointY, centerX, centerY, angleOffset float64) Vec2d {

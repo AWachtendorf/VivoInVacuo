@@ -85,16 +85,15 @@ func (t *Torpedo) Fire(startPos Vec2d, rotDegree float64) {
 	t.explodingScale = NewLinearFloatAnimation(500*time.Millisecond, 1, 10)
 	t.state = Launched
 	rotationRadiant := rotDegree * (math.Pi / 180)
-
 	t.dir = Vec2d{X: math.Cos(rotationRadiant), Y: math.Sin(rotationRadiant)} // the rotation as a vector
 }
 
-// Width returns the real pixel width after applying display scale and ship scale
+
 func (t *Torpedo) Width() float64 {
 	return t.scale * ScaleFactor * t.width
 }
 
-// Height returns the real pixel height after applying display scale and ship scale
+
 func (t *Torpedo) Height() float64 {
 	return t.scale * ScaleFactor * t.height
 }

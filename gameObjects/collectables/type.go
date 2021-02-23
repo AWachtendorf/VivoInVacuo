@@ -1,5 +1,6 @@
 package collectables
 
+// An ItemType is one of many constant types an Item may be.
 type ItemType int
 
 const (
@@ -9,6 +10,7 @@ const (
 	metal
 	)
 
+// TypeAsString is needed because the constants are int type.
 func (i ItemType)TypeAsString()string{
 	switch i{
 	case ore:

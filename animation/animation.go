@@ -8,7 +8,7 @@ import (
 type Animation struct {
 	start        time.Duration
 	duration     time.Duration
-	running      bool
+	//running      bool
 	interpolator Interpolator
 	state        animState
 }
