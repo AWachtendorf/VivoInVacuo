@@ -23,3 +23,49 @@ func (r Rect) Intersects(g Rect) bool {
 	return r.Left < g.Right && g.Left < r.Right && r.Top < g.Bottom && g.Top < r.Bottom
 }
 
+
+func SectorBounds(X, Y float64) Rect {
+	lengthOfSectorX := float64(WorldWidth / Sectors)
+	lengthOfSectorY := float64(WorldHeight / Sectors)
+
+	xmin := X * lengthOfSectorX
+	xmax := xmin + lengthOfSectorX
+	ymin := Y * lengthOfSectorY
+	ymax := ymin + lengthOfSectorY
+
+	return Rect{
+		Left:   xmin,
+		Top:    ymin,
+		Right:  xmax,
+		Bottom: ymax,
+	}
+}
+
+// SpawnInRandomSector spawns objects in a specific Sector. The spawn position is in the bounds of the sector,
+// but then randomized.
+func  SpawnInRandomSector(X, Y float64) Vec2d {
+	sector := SectorBounds(X, Y)
+	return Vec2d{X: RandFloats(sector.Left, sector.Right),
+		Y: RandFloats(sector.Top, sector.Bottom),
+	}
+}
+
+// ObjectIsInWhichSector calculates in which Sector the Ship currently is.
+func ObjectIsInWhichSector(position Vec2d) (int, int) {
+	for i := 0; i < Sectors; i++ {
+		for j := 0; j < Sectors; j++ {
+			sec := SectorBounds(float64(i), float64(j))
+			{
+				if position.X-ViewPortX > sec.Left &&
+					position.X-ViewPortX < sec.Right &&
+					position.Y-ViewPortY > sec.Top &&
+					position.Y-ViewPortY < sec.Bottom {
+
+					return i, j
+				}
+			}
+		}
+	}
+
+	return 0, 0
+}

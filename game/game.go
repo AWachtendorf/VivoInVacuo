@@ -4,22 +4,24 @@ import (
 	"bytes"
 	"fmt"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/assets"
-	"github.com/AWachtendorf/VivoInVacuo/v2/gameEnvorinment/background"
-	. "github.com/AWachtendorf/VivoInVacuo/v2/gameEnvorinment/viewport"
-	"github.com/AWachtendorf/VivoInVacuo/v2/gameObjects"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/gameObjects/collectables"
-	"github.com/AWachtendorf/VivoInVacuo/v2/gameObjects/floatingObjects"
-	"github.com/AWachtendorf/VivoInVacuo/v2/gameObjects/playerShip"
+	. "github.com/AWachtendorf/VivoInVacuo/v2/gameObjects/floatingobjects"
+	. "github.com/AWachtendorf/VivoInVacuo/v2/gameObjects/particleSystems"
+	. "github.com/AWachtendorf/VivoInVacuo/v2/gameObjects/playerShip"
+	. "github.com/AWachtendorf/VivoInVacuo/v2/gameenvorinment/background"
+	. "github.com/AWachtendorf/VivoInVacuo/v2/gameenvorinment/gameArea"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/mathsandhelper"
-	"github.com/AWachtendorf/VivoInVacuo/v2/ui/minimap"
+	. "github.com/AWachtendorf/VivoInVacuo/v2/ui/minimap"
 	"github.com/hajimehoshi/ebiten/v2"
-	"golang.org/x/image/colornames"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"image"
 	"log"
 	"math"
 	"math/rand"
 	"time"
 )
+
+
 
 type Renderable interface {
 	Draw(screen *ebiten.Image)
@@ -52,54 +54,54 @@ type Collectable interface {
 	SetCollected(isitcollected bool)
 	IsCollected() bool
 	Type() ItemType
+	FollowPosition(pos1, pos2 Vec2d) Vec2d
 }
 
 type Game struct {
-	Img          *playerShip.Ship
-	BG           []*background.BackGround
-	Renderables  []Renderable
-	Readupdate   []Readupdate
-	Objects      []Object
-	ItemOwners   []ItemOwner
-	Collectables []Collectable
-	viewPort     *Viewport
-	MiniMap      *minimap.Minimap
-	Ship         *playerShip.Ship
-	met          *floatingObjects.FloatingObject
-	Scale        float64
+	parallaxBackGrounds []*BackGround
+	renderables         []Renderable
+	readupdate          []Readupdate
+	objects             []Object
+	itemOwners          []ItemOwner
+	collectables        []Collectable
+	spaceArea           *GameArea
+	miniMap             *Minimap
+	ship                *Ship
 }
 
 func (g *Game) Update() error {
-	for _, rr := range g.Readupdate {
-		err := rr.Update()
+	for _, updateObjects := range g.readupdate {
+		err := updateObjects.Update()
 		if err != nil {
 			fmt.Print(err)
 		}
 	}
-
-	g.DropItems()
+	g.dropItems()
 	g.applyCollisions()
 	g.applyTorpedos()
-	g.PickUpCollectables()
+	g.pickUpCollectables()
+
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	for _, r := range g.Renderables {
+	for _, r := range g.renderables {
 		r.Draw(screen)
 	}
+	ebitenutil.DebugPrint(screen, fmt.Sprintf("\n\n\n\nTPS: %v" ,ebiten.CurrentTPS()))
+	ebitenutil.DebugPrint(screen, fmt.Sprintf("\n\n\n\n\nFPS: %v" ,ebiten.CurrentFPS()))
 }
 
-func (g *Game) DropItems() {
-	for _, r := range g.ItemOwners {
+func (g *Game) dropItems() {
+	for _, r := range g.itemOwners {
 
 		if !r.Status() && !r.ItemDropped() {
 			dropchance := RandInts(0, 10)
 			if dropchance > 3 {
 				item := r.SpawnItem()
-				g.Collectables = append(g.Collectables, item)
-				g.Renderables = append(g.Renderables, item)
-				g.Readupdate = append(g.Readupdate, item)
+				g.collectables = append(g.collectables, item)
+				g.renderables = append(g.renderables, item)
+				g.readupdate = append(g.readupdate, item)
 			} else {
 				r.SpawnItem()
 			}
@@ -111,66 +113,17 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 	return ScreenWidth, ScreenHeight
 }
 
-func (g *Game) CreateNewRandomMeteoride() {
-	nm := floatingObjects.NewBundledFloatingObject(Vec2d{RandFloats(0, WorldWidth), RandFloats(0, WorldHeight)}, 100, 100)
-	g.Readupdate = append(g.Readupdate, nm)
-	g.Renderables = append(g.Renderables, nm)
-	g.Objects = append(g.Objects, nm)
-	for _, j := range nm.FloatingObjects() {
-		g.MiniMap.Pixels = append(g.MiniMap.Pixels, j)
-		g.Readupdate = append(g.Readupdate, j)
-		g.Objects = append(g.Objects, j)
-		g.Renderables = append(g.Renderables, j)
-		g.ItemOwners = append(g.ItemOwners, j)
-	}
-}
-
-func (g *Game) CreateRandomObject() {
-
-	obj := floatingObjects.NewFloatingObject(0, true, false,
-		g.viewPort.SpawnInSectorRandom(3, 3),
-		Fcolor{
-			R: 0,
-			G: 1,
-			B: 0,
-			A: 1,
-		})
-	obj.SetRotation(RandFloats(-0.02, 0.02))
-	g.MiniMap.AppendPositionPixels(obj)
-	g.Readupdate = append(g.Readupdate, obj)
-	g.Objects = append(g.Objects, obj)
-	g.Renderables = append(g.Renderables, obj)
-	g.ItemOwners = append(g.ItemOwners, obj)
-}
-func (g *Game) CreateRandomObject1() {
-
-	obj := floatingObjects.NewFloatingObject(0, true, false,
-		g.viewPort.SpawnInSectorRandom(7, 7),
-		Fcolor{
-			R: 0,
-			G: 1,
-			B: 0,
-			A: 1,
-		})
-	obj.SetRotation(RandFloats(-0.02, 0.02))
-	g.MiniMap.AppendPositionPixels(obj)
-	g.Readupdate = append(g.Readupdate, obj)
-	g.Objects = append(g.Objects, obj)
-	g.Renderables = append(g.Renderables, obj)
-	g.ItemOwners = append(g.ItemOwners, obj)
-}
-func (g *Game) PickUpCollectables() {
-	ship := g.Objects[0]
-	for _, objB := range g.Collectables { // compare it only with all subsequent object, if they match (not with itself and not vice versa)
-		if g.Objects[0].BoundingBox().Intersects(objB.BoundingBox()) {
-
-			objB.SetPosition(FollowPosition(Vec2d{ship.Position().X - ViewPortX, ship.Position().Y - ViewPortY},
-				Vec2d{objB.Position().X - ViewPortX, objB.Position().Y - ViewPortY}))
-			x := objB.Position().Sub(ship.Position()).Abs()
-			if x.X < 1 && x.Y < 1 && !objB.IsCollected() {
-				g.Ship.Inventory().AddToInventory(objB.Type())
-				objB.SetCollected(true)
-				objB = nil
+func (g *Game) pickUpCollectables() {
+	ship := g.ship
+	for _, collectable := range g.collectables { // compare it only with all subsequent object, if they match (not with itself and not vice versa)
+		if ship.BoundingBox().Intersects(collectable.BoundingBox()) {
+			collectable.SetPosition(collectable.FollowPosition(Vec2d{X: ship.Position().X - ViewPortX, Y: ship.Position().Y - ViewPortY},
+				Vec2d{X: collectable.Position().X - ViewPortX, Y: collectable.Position().Y - ViewPortY}))
+			x := collectable.Position().Sub(ship.Position()).Abs()
+			if x.X < 1 && x.Y < 1 && !collectable.IsCollected() {
+				g.ship.Inventory().AddToInventory(collectable.Type())
+				collectable.SetCollected(true)
+				collectable = nil
 			}
 		}
 	}
@@ -180,22 +133,22 @@ func FollowPosition(pos1, pos2 Vec2d) Vec2d {
 	pos := pos1.Sub(pos2).Norm().Scale(3, 3)
 	pos2.X += pos.X
 	pos2.Y += pos.Y
-	return Vec2d{pos2.X, pos2.Y}
+	return Vec2d{X: pos2.X, Y: pos2.Y}
 }
 
 func (g *Game) applyCollisions() {
 	// apply our physical hit-test
-	for a, objA := range g.Objects { // take each object
-		for b := a + 1; b < len(g.Objects); b++ { // compare it only with all subsequent object, if they match (not with itself and not vice versa)
-			objB := g.Objects[b]
+	for a, objA := range g.objects { // take each object
+		for b := a + 1; b < len(g.objects); b++ { // compare it only with all subsequent object, if they match (not with itself and not vice versa)
+			objB := g.objects[b]
 			if objA.BoundingBox().Intersects(objB.BoundingBox()) { // do a and b collide with each other?
 				collisionDir := objA.Position().Sub(objB.Position()).Norm()      // the vector of the collision is in general the difference of the two positions
 				totalEnergy := math.Abs(objA.Energy()) + math.Abs(objB.Energy()) // the total energy is absolute value of both ships (not physically correct, because it should be actually a force vector)
 				massDistributionA := objA.Mass() / (objA.Mass() + objB.Mass())   // e.g 5 / (5 + 10) = 0.3 or 5 / (5+5)= 0.5
-				energyShipA := totalEnergy * (1 - massDistributionA)             // the lighter the Ship, the more energy it gets => use the inverse: if a Ship only weights 25% it gets 75% of the energy
-				energyShipB := totalEnergy * massDistributionA                   // Ship b just gets the smaller proportion: Ship has 75% of the mass => it gets 25% of the energy
+				energyShipA := totalEnergy * (1 - massDistributionA)             // the lighter the ship, the more energy it gets => use the inverse: if a ship only weights 25% it gets 75% of the energy
+				energyShipB := totalEnergy * massDistributionA                   // ship b just gets the smaller proportion: ship has 75% of the mass => it gets 25% of the energy
 				collisionDirA := collisionDir.Scale(energyShipA, energyShipA)
-				collisionDirB := collisionDir.Scale(-energyShipB, -energyShipB) // we need to negate one Ship direction, depending of the collision dir
+				collisionDirB := collisionDir.Scale(-energyShipB, -energyShipB) // we need to negate one ship direction, depending of the collision dir
 				objA.ApplyDamage(massDistributionA * 100)
 				objB.ApplyDamage(massDistributionA * 100)
 				objA.Applyforce(collisionDirA)
@@ -209,15 +162,14 @@ func (g *Game) applyCollisions() {
 
 // applyTorpedos calculates any gameObjects hits.
 func (g *Game) applyTorpedos() {
-	for _, t := range g.Ship.Torpedos() {
-		for i, j := range g.Objects {
+	for _, t := range g.ship.Torpedos() {
+		for i, j := range g.objects {
 			if i == 0 {
 				continue
 			}
 			if t.IsActive() && t.BoundingBox().Intersects(j.BoundingBox()) {
-
 				t.Explode()
-				collisionDir := j.Position().Sub(t.Position()).Norm()
+				collisionDir := (j.Position().Sub(t.Position())).Norm()
 				knockback := t.Damage * 10
 				collission := collisionDir.Div(j.Mass()/knockback, j.Mass()/knockback)
 				j.Applyforce(collission)
@@ -229,105 +181,127 @@ func (g *Game) applyTorpedos() {
 	}
 }
 
-func (g *Game) Setup() {
+func NewImageFromByteSlice(byteSlice []byte) *ebiten.Image {
+	Img, _, err := image.Decode(bytes.NewReader(byteSlice))
+	if err != nil {
+		log.Fatal(err)
+	}
+	return ebiten.NewImageFromImage(Img)
+}
 
+func (g *Game) Setup() {
 	rand.Seed(time.Now().UnixNano())
 
-	loadimage, _, err := image.Decode(bytes.NewReader(Person_pic))
+	shipImage := NewImageFromByteSlice(MockShip)
+	torpedoImage := NewImageFromByteSlice(Nova_png)
+	backGroundFarthest := NewImageFromByteSlice(Bg_back)
+	backGroundMiddle := NewImageFromByteSlice(Bg_back_flipped)
+	backGroundNearest := NewImageFromByteSlice(Bg_front)
 
-	imxy := ebiten.NewImageFromImage(loadimage)
+	g.ship = NewShip(shipImage, torpedoImage, 5)
+	g.objects = append(g.objects, g.ship)
+	g.spaceArea = NewGameArea(-WorldWidth/2, -WorldHeight/2, g.ship, 15)
+	g.miniMap = NewMinimap(ScreenWidth/5, ScreenWidth/5, ScreenWidth-ScreenWidth/5-4, 4, g.spaceArea)
+	g.miniMap.MapMarker = append(g.miniMap.MapMarker, g.ship)
 
-	nov, _, err := image.Decode(bytes.NewReader(Nova_png))
-	nova := ebiten.NewImageFromImage(nov)
+	backGroundLayer2 := NewBackGround(g.ship, Vec2d{X: -100, Y: 100}, backGroundFarthest, &ebiten.DrawImageOptions{}, 0.3)
+	backGroundLayer1 := NewBackGround(g.ship, Vec2d{X: -40, Y: 150}, backGroundMiddle, &ebiten.DrawImageOptions{}, 0.4)
+	backGroundLayer0 := NewBackGround(g.ship, Vec2d{X: -40, Y: 80}, backGroundNearest, &ebiten.DrawImageOptions{}, 0.5)
 
-	particle := ebiten.NewImage(2, 2)
-	particle.Fill(colornames.White)
+	g.parallaxBackGrounds = append(g.parallaxBackGrounds, backGroundLayer2, backGroundLayer1, backGroundLayer0)
 
-	ship := playerShip.NewShip(imxy, nova, particle, 5)
+	elapsedTime := &Time{}
 
-	bgback, _, err := image.Decode(bytes.NewReader(Bg_back))
-	bgimg := ebiten.NewImageFromImage(bgback)
-	if err != nil {
-		log.Fatal(err)
-	}
-	bgbackflipped, _, err := image.Decode(bytes.NewReader(Bg_back_flipped))
-	bgimgflipped := ebiten.NewImageFromImage(bgbackflipped)
-	if err != nil {
-		log.Fatal(err)
-	}
+	g.createMockedQuestMarker(5, 7)
+	g.createMockedQuestMarker(2, 4)
+	g.createMockedQuestMarker(9, 4)
+	g.createMockedQuestMarker(7, 0)
 
-	bgfront, _, err := image.Decode(bytes.NewReader(Bg_front))
-	bgfrontimg := ebiten.NewImageFromImage(bgfront)
-	if err != nil {
-		log.Fatal(err)
-	}
+	g.createMockedObjects()
 
-	bg := background.NewBackGround(ship, Vec2d{-100, 100}, bgimg, &ebiten.DrawImageOptions{}, 0.3)
-	bg1 := background.NewBackGround(ship, Vec2d{-40, 150}, bgimgflipped, &ebiten.DrawImageOptions{}, 0.4)
-	bg2 := background.NewBackGround(ship, Vec2d{-40, 80}, bgfrontimg, &ebiten.DrawImageOptions{}, 0.5)
+	g.createBackGroundParticles()
+	//
+	//g.createBackgroundGalaxies(20, 40)
+	//g.createBackgroundGalaxies(40, 15)
+	//g.createBackgroundGalaxies(60, 30)
 
-	g.Ship = ship
+	g.renderables = append(g.renderables, backGroundLayer2, backGroundLayer1, backGroundLayer0, g.ship, g.miniMap)
+	g.readupdate = append(g.readupdate, backGroundLayer2, backGroundLayer1, backGroundLayer0, g.ship, g.spaceArea, elapsedTime, g.miniMap)
+}
 
-	g.BG = append(g.BG, bg, bg1, bg2)
-	g.viewPort = NewViewport(-WorldWidth/2, -WorldHeight/2, WorldWidth, WorldHeight, ship, 15)
-	abc := gameObjects.AddAsquare(float64(rand.Intn(500)), float64(rand.Intn(500)), 50, 50)
-	abc1 := gameObjects.AddAsquare(float64(rand.Intn(500)), float64(rand.Intn(500)), 50, 50)
-	abc2 := gameObjects.AddAsquare(float64(rand.Intn(500)), float64(rand.Intn(500)), 50, 50)
-	abc3 := gameObjects.AddAsquare(float64(rand.Intn(500)), float64(rand.Intn(500)), 50, 50)
-
-	mmap := minimap.NewMinimap(ScreenWidth/5, ScreenWidth/5, ScreenWidth-ScreenWidth/5-4, 4, g.viewPort, colornames.Black)
-	g.MiniMap = mmap
-
-	mmap.Pixels = append(mmap.Pixels, ship, abc, abc1, abc2, abc3)
-
-	times := &Time{}
-	g.Objects = append(g.Objects, ship)
-
+func (g *Game) createMockedObjects() {
 	for i := 0; i < 20; i++ {
-		g.CreateNewRandomMeteoride()
+		g.createNewRandomMeteoride()
+		g.createRandomObject()
+		g.createRandomObject1()
 	}
-	//TODO: Example
-g.MiniMap.AppendQuestMarkers(g.MiniMap.NewQuestMarker(6,2))
-	g.MiniMap.AppendQuestMarkers(g.MiniMap.NewQuestMarker(1,1))
-	g.MiniMap.AppendQuestMarkers(g.MiniMap.NewQuestMarker(4,8))
+}
 
-	for i := 0; i < 20; i++ {
-		g.CreateRandomObject()
-		g.CreateRandomObject1()
+func (g *Game) createMockedQuestMarker(secX, secY float64) {
+	g.miniMap.AppendQuestMarkers(g.miniMap.NewQuestMarker(secX, secY))
+}
+
+func (g *Game) createNewRandomMeteoride() {
+	nm := NewBundledFloatingObject(Vec2d{X: RandFloats(0, WorldWidth), Y: RandFloats(0, WorldHeight)}, 100, 100)
+	g.readupdate = append(g.readupdate, nm)
+	g.renderables = append(g.renderables, nm)
+	g.objects = append(g.objects, nm)
+	for _, j := range nm.FloatingObjects() {
+		g.miniMap.MapMarker = append(g.miniMap.MapMarker, j)
+		g.readupdate = append(g.readupdate, j)
+		g.objects = append(g.objects, j)
+		g.renderables = append(g.renderables, j)
+		g.itemOwners = append(g.itemOwners, j)
 	}
+}
 
-	for i := 0; i < 30000; i++ {
-		g.Renderables = append(g.Renderables, gameObjects.NewStaticParticle(RandFloats(0, WorldWidth), RandFloats(0, WorldHeight), RandFloats(1, 2)))
+func (g *Game) createRandomObject() {
+
+	obj := NewFloatingObject(0, true, false,
+		SpawnInRandomSector(3, 3),
+		Fcolor{
+			R: 0,
+			G: 1,
+			B: 0,
+			A: 1,
+		})
+	obj.SetRotation(RandFloats(-0.02, 0.02))
+	g.miniMap.AppendPositionPixels(obj)
+	g.readupdate = append(g.readupdate, obj)
+	g.objects = append(g.objects, obj)
+	g.renderables = append(g.renderables, obj)
+	g.itemOwners = append(g.itemOwners, obj)
+}
+
+func (g *Game) createRandomObject1() {
+	newObj := NewFloatingObject(0, true, false,
+		SpawnInRandomSector(7, 7),
+		Fcolor{
+			R: 0,
+			G: 1,
+			B: 0,
+			A: 1,
+		})
+	newObj.SetRotation(RandFloats(-0.02, 0.02))
+	g.miniMap.AppendPositionPixels(newObj)
+	g.readupdate = append(g.readupdate, newObj)
+	g.objects = append(g.objects, newObj)
+	g.renderables = append(g.renderables, newObj)
+	g.itemOwners = append(g.itemOwners, newObj)
+}
+
+func (g *Game) createBackGroundParticles() {
+	for i := 0; i < 20000; i++ {
+		g.renderables = append(g.renderables, NewStaticParticle(RandFloats(0, WorldWidth), RandFloats(0, WorldHeight), RandFloats(1, 2)))
 	}
+}
 
+func (g *Game) createBackgroundGalaxies(offsetX, offsetY int) {
 	for i := 0; i < 300; i++ {
 		var max = float64(i) + RandFloats(50, 50)
 		if i > 150 {
 			max = 300 - float64(i) + RandFloats(50, 50)
 		}
-		g.Renderables = append(g.Renderables, gameObjects.NewStaticParticle(float64(WorldWidth/10+i)+RandFloats(-max, max)+RandFloats(-max, max), float64(WorldHeight/10+i)+RandFloats(-max, max)+RandFloats(-max, max), RandFloats(1, 5)))
+		g.renderables = append(g.renderables, NewStaticParticle(float64(WorldWidth/offsetX+i)+RandFloats(-max, max)+RandFloats(-max, max), float64(WorldHeight/offsetY+i)+RandFloats(-max, max)+RandFloats(-max, max), RandFloats(1, 5)))
 	}
-
-	for i := 0; i < 300; i++ {
-		var max = float64(i) + RandFloats(50, 50)
-		if i > 150 {
-			max = 300 - float64(i) + RandFloats(50, 50)
-		}
-		g.Renderables = append(g.Renderables, gameObjects.NewStaticParticle(float64(WorldWidth/50+i)+RandFloats(-max, max)+RandFloats(-max, max), float64(WorldHeight/30+i)+RandFloats(-max, max)+RandFloats(-max, max), RandFloats(1, 5)))
-	}
-
-	for i := 0; i < 300; i++ {
-		var max = float64(i) + RandFloats(50, 50)
-		if i > 150 {
-			max = 300 - float64(i) + RandFloats(50, 50)
-		}
-		g.Renderables = append(g.Renderables, gameObjects.NewStaticParticle(float64(WorldWidth/60+i)+RandFloats(-max, max)+RandFloats(-max, max), float64(WorldHeight/70+i)+RandFloats(-max, max)+RandFloats(-max, max), RandFloats(1, 5)))
-	}
-
-	g.Renderables = append(g.Renderables, bg, bg1, bg2, ship, g.viewPort, abc, abc1, abc2, abc3, mmap)
-
-	g.Readupdate = append(g.Readupdate, bg, bg1, bg2, ship, g.viewPort, abc, abc1, abc2, abc3, times, mmap)
-
-	g.Objects = append(g.Objects, abc, abc1, abc2, abc3)
-
 }

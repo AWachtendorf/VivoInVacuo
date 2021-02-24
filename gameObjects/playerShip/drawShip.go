@@ -19,6 +19,13 @@ func (s *Ship) DrawInventory(screen *ebiten.Image) {
 	}
 }
 
+// DisplayShipSectorPosition writes the current sector the Ship is flying trough to the screen.
+func(s *Ship) DisplayShipSectorPosition(screen *ebiten.Image) {
+	X, Y := ObjectIsInWhichSector(s.position)
+	s.OtherText().TextToScreen(screen, 10, ScreenHeight-10, fmt.Sprintf("Sector %x, %x", X, Y), 0)
+
+}
+
 func (s *Ship) ReadAllDrawCommands(screen *ebiten.Image, rotationRadiant float64) {
 	for _, t := range s.torpedoes {
 		t.OnDraw(screen)
@@ -26,7 +33,7 @@ func (s *Ship) ReadAllDrawCommands(screen *ebiten.Image, rotationRadiant float64
 	s.particlePack.Draw(screen)
 
 	s.DrawInventory(screen)
-
+	s.DisplayShipSectorPosition(screen)
 	s.healthBar.Draw(screen)
 	s.shieldBar.Draw(screen)
 	s.DrawShipOnScreen(screen, rotationRadiant)
@@ -44,8 +51,8 @@ func (s *Ship) DrawShipOnScreen(screen *ebiten.Image, rotationRadiant float64) {
 
 func (s *Ship) DrawOnMap(screen *ebiten.Image, mapposX, mapwidth, mapheight, gameareawidth, gameareheight float64) {
 	s.positionPixelImageOptions.GeoM.Reset()
-	s.positionPixelImageOptions.GeoM.Translate(mapposX+Dreisatz(s.Position().X-ViewPortX, mapwidth, gameareawidth),
-		Dreisatz(s.Position().Y-ViewPortY, mapheight, gameareheight))
+	s.positionPixelImageOptions.GeoM.Translate(mapposX+RuleOfThree(s.Position().X-ViewPortX, mapwidth, gameareawidth),
+		RuleOfThree(s.Position().Y-ViewPortY, mapheight, gameareheight))
 	if s.Status() {
 		screen.DrawImage(s.positionPixelImage, s.positionPixelImageOptions)
 			}

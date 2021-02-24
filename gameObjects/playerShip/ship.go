@@ -2,7 +2,8 @@ package playerShip
 
 import (
 	. "github.com/AWachtendorf/VivoInVacuo/v2/animation"
-	. "github.com/AWachtendorf/VivoInVacuo/v2/gameObjects"
+	"github.com/AWachtendorf/VivoInVacuo/v2/gameObjects/particleSystems"
+	"github.com/AWachtendorf/VivoInVacuo/v2/gameObjects/torpedo"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/mathsandhelper"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/ui/inventory"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/ui/statusBar"
@@ -32,8 +33,8 @@ type Ship struct {
 
 	healthBar    *StatusBar
 	shieldBar    *StatusBar
-	torpedoes    []*Torpedo
-	particlePack ParticlePack
+	torpedoes    []*torpedo.Torpedo
+	particlePack particleSystems.ParticlePack
 
 	inventory *Inventory
 
@@ -62,7 +63,7 @@ func (s *Ship) UiText() *Text {
 	return s.uiText
 }
 
-func (s *Ship) Torpedos() []*Torpedo {
+func (s *Ship) Torpedos() []*torpedo.Torpedo {
 	return s.torpedoes
 }
 
@@ -114,7 +115,7 @@ func (s *Ship) Inventory() *Inventory {
 	return s.inventory
 }
 
-func NewShip(img, torpedoImg, partImg *ebiten.Image, torpedos int) *Ship {
+func NewShip(img, torpedoImg *ebiten.Image, torpedos int) *Ship {
 	w, h := img.Size()
 	pix := ebiten.NewImage(2, 2)
 	pix.Fill(colornames.Darkred)
@@ -141,8 +142,6 @@ func NewShip(img, torpedoImg, partImg *ebiten.Image, torpedos int) *Ship {
 		uiText:                    &Text{},
 		otherText:                 &Text{},
 	}
-	s.shipImageOptions.Filter = ebiten.FilterLinear // we want a nicer scaling
-	s.shipImageOptions.CompositeMode = ebiten.CompositeModeLighter
 
 	s.uiText.SetupText(15, fonts.PressStart2P_ttf)
 	s.otherText.SetupText(20, fonts.MPlus1pRegular_ttf)
@@ -151,8 +150,9 @@ func NewShip(img, torpedoImg, partImg *ebiten.Image, torpedos int) *Ship {
 	s.shieldBar = NewStatusBar(int(s.shieldMax), 15, 10, 30, s.shieldMax, s.repairKit, colornames.Darkcyan)
 
 	for i := 0; i < torpedos; i++ {
-		s.torpedoes = append(s.torpedoes, NewTorpedo(torpedoImg))
+		s.torpedoes = append(s.torpedoes, torpedo.NewTorpedo(torpedoImg))
 	}
-	s.particlePack = NewParticlePack(100)
+	s.particlePack = particleSystems.NewParticlePack(360)
+
 	return s
 }

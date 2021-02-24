@@ -42,14 +42,14 @@ func (s *Ship) ProcessInput() float64 {
 
 	if ebiten.IsKeyPressed(ebiten.KeyW) {
 		if s.thrust < s.maxThrust {
-			s.thrust += thrust * 2
+			s.thrust += thrust
 			s.accelerated = true
 		}
 	}
 
 	if ebiten.IsKeyPressed(ebiten.KeyS) {
 		if s.thrust > -s.maxThrust {
-			s.thrust -= thrust * 2
+			s.thrust -= thrust
 			s.accelerated = true
 		}
 	}
@@ -62,6 +62,11 @@ func (s *Ship) ProcessInput() float64 {
 
 	if inpututil.IsKeyJustPressed(ebiten.KeySpace) {
 		s.fireTorpedo()
+	}
+
+	// TODO: Currently only for test reasons implemented
+	if inpututil.IsKeyJustPressed(ebiten.KeyP) {
+		s.novaParticle()
 	}
 
 	decay := 1 - (Elapsed / s.mass)
@@ -92,23 +97,26 @@ func (s *Ship) ProcessInput() float64 {
 func (s *Ship) fireTorpedo() {
 	for _, torpedo := range s.torpedoes {
 		if torpedo.IsAvailable() {
-			torpedo.Fire(s.position, s.rotation)
+			torpedo.Fire(s.position.Sub(Vec2d{ViewPortX, ViewPortY}), s.rotation)
 			break
 		}
 	}
 }
 
+func (s *Ship) novaParticle() {
+	s.particlePack.Nova(s.position)
+}
 func (s *Ship) applyParticles() {
 	for i, part := range s.particlePack.Particles() {
 		if part.IsAvailable() {
 			if i%2 == 0 {
-				s.particlePack.UseForThrust(s.rotation-180, RotateAroundPivot(
+				s.particlePack.UseForThrust(s.rotation-180, RotatedWithOffset(
 					s.Position().X-40+float64(rand.Intn(8)),
 					s.Position().Y+40+float64(rand.Intn(8)),
 					s.Position().X, s.Position().Y, -(s.rotation-80)), s.thrust)
 				break
 			}
-			s.particlePack.UseForThrust(s.rotation-180, RotateAroundPivot(
+			s.particlePack.UseForThrust(s.rotation-180, RotatedWithOffset(
 				s.Position().X-40+float64(rand.Intn(8)),
 				s.Position().Y+40+float64(rand.Intn(8)),
 				s.Position().X, s.Position().Y, -(s.rotation-10)), s.thrust)

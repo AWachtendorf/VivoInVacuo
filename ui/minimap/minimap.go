@@ -1,72 +1,14 @@
 package minimap
 
 import (
-	"github.com/AWachtendorf/VivoInVacuo/v2/gameEnvorinment/viewport"
+	. "github.com/AWachtendorf/VivoInVacuo/v2/gameenvorinment/gameArea"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/mathsandhelper"
 	"github.com/hajimehoshi/ebiten/v2"
 	"golang.org/x/image/colornames"
-	"image/color"
 )
 
-type QuestMarker struct {
-	QuestMarker                         *ebiten.Image
-	QuestMarkerOpts                     *ebiten.DrawImageOptions
-	sectorX, sectorY                    float64
-	questmarkerwidth, questmarkerheight float64
-	markerColor                         Fcolor
-}
 
-func (m *Minimap) NewQuestMarker(secX, secY float64) QuestMarker {
-	sector := m.gameArea.CalculateSectorBounds(secX, secY)
-	markerWidth := Dreisatz(sector.Xmax-sector.Xmin, m.width, m.gameArea.Width())
-	markerHeight := Dreisatz(sector.Ymax-sector.Ymin, m.height, m.gameArea.Height())
-	newQuestMarker := ebiten.NewImage(int(markerWidth), int(markerHeight))
-	newQuestMarker.Fill(colornames.Cyan)
-
-	shl := QuestMarker{
-		QuestMarker:       newQuestMarker,
-		QuestMarkerOpts:   &ebiten.DrawImageOptions{},
-		questmarkerwidth:  markerWidth,
-		questmarkerheight: markerHeight,
-		sectorX:           secX,
-		sectorY:           secY,
-		markerColor: Fcolor{
-			R: 0,
-			G: 1,
-			B: 0,
-			A: 0.3,
-		},
-	}
-
-	return shl
-
-}
-
-func(m *Minimap)AppendQuestMarkers(marker QuestMarker){
-	m.questMarker = append(m.questMarker, marker)
-
-}
-
-
-func (m *Minimap) DrawQuestMarker(screen *ebiten.Image) {
-	for _, marker := range m.questMarker {
-		marker.QuestMarkerOpts.GeoM.Reset()
-		marker.QuestMarkerOpts.ColorM.Reset()
-
-		if m.showmarker {
-			marker.QuestMarkerOpts.GeoM.Translate(m.PositionOfMarker(marker).X, m.PositionOfMarker(marker).Y)
-			marker.QuestMarkerOpts.ColorM.Scale(marker.markerColor.R, marker.markerColor.G, marker.markerColor.B, marker.markerColor.A)
-			screen.DrawImage(marker.QuestMarker, marker.QuestMarkerOpts)
-		}
-	}
-}
-
-func (m *Minimap) PositionOfMarker(questMarker QuestMarker) Vec2d {
-	return Vec2d{X: m.position.X + questMarker.sectorX*questMarker.questmarkerwidth,
-		Y: m.position.Y + questMarker.sectorY*questMarker.questmarkerheight}
-}
-
-type PositionPixels interface {
+type MapMarker interface {
 	DrawOnMap(screen *ebiten.Image, mapposX, mapwidth, mapheight, gameareawidth, gameareheight float64)
 }
 
@@ -76,36 +18,97 @@ type Minimap struct {
 	mapBorderImage        *ebiten.Image
 	mapBorderImageOptions *ebiten.DrawImageOptions
 
-	gameArea      *viewport.Viewport
-	Pixels        []PositionPixels
+	gameArea      *GameArea
+	MapMarker     []MapMarker
 	questMarker   []QuestMarker
 	showmarker    bool
 	position      Vec2d
 	width, height float64
 }
 
-func NewMinimap(w, h, x, y float64, pane *viewport.Viewport, color color.RGBA) *Minimap {
+func NewMinimap(w, h, x, y float64, viewport *GameArea) *Minimap {
 
-	imp1 := ebiten.NewImage(int(w), int(h))
-	imp1.Fill(color)
-	bg := ebiten.NewImage((ScreenWidth/5)+4, (ScreenWidth/5)+4)
-	bg.Fill(colornames.White)
-	pix := ebiten.NewImage(2, 2)
-	pix.Fill(colornames.Red)
+	mapForegroundImage := ebiten.NewImage(int(w), int(h))
+	mapForegroundImage.Fill(colornames.Black)
+	borderImage := ebiten.NewImage((ScreenWidth/5)+4, (ScreenWidth/5)+4)
+	borderImage.Fill(colornames.White)
+
 	m := &Minimap{
-
-		mapImage:              imp1,
+		mapImage:              mapForegroundImage,
 		mapImageOptions:       &ebiten.DrawImageOptions{},
-		mapBorderImage:        bg,
+		mapBorderImage:        borderImage,
 		mapBorderImageOptions: &ebiten.DrawImageOptions{},
 
-		gameArea: pane,
+		gameArea: viewport,
 		position: Vec2d{X: x, Y: y},
 		width:    w,
 		height:   h,
 	}
-	m.questMarker = append(m.questMarker, m.NewQuestMarker(3, 3), m.NewQuestMarker(5, 7))
+
 	return m
+}
+
+
+type QuestMarker struct {
+	questMarker                         *ebiten.Image
+	questMarkerOpts                     *ebiten.DrawImageOptions
+	sectorX, sectorY                    float64
+	questMarkerWidth, questMarkerHeight float64
+	markerColor                         Fcolor
+}
+
+func (m *Minimap) NewQuestMarker(secX, secY float64) QuestMarker{
+	sector := SectorBounds(secX, secY)
+	markerWidth := RuleOfThree(sector.Width(), m.width, m.gameArea.Width())
+	markerHeight := RuleOfThree(sector.Height(), m.height, m.gameArea.Height())
+	newQuestMarker := ebiten.NewImage(int(markerWidth), int(markerHeight))
+	newQuestMarker.Fill(colornames.Cyan)
+
+	qm := QuestMarker{
+		questMarker:       newQuestMarker,
+		questMarkerOpts:   &ebiten.DrawImageOptions{},
+		questMarkerWidth:  markerWidth,
+		questMarkerHeight: markerHeight,
+		sectorX:           secX,
+		sectorY:           secY,
+		markerColor: Fcolor{
+			R: 0,
+			G: 0.5,
+			B: 0.5,
+			A: 0.7,
+		},
+	}
+	return qm
+}
+
+func(m *Minimap)AppendQuestMarkers(marker QuestMarker){
+	m.questMarker = append(m.questMarker, marker)
+}
+
+func(m *Minimap)RemoveQuestMarkers(marker QuestMarker){
+	for i, qm := range m.questMarker{
+		if qm.sectorX == marker.sectorX && qm.sectorY == marker.sectorY{
+			m.questMarker = append(m.questMarker[:i],m.questMarker[i+1:]...)
+		}
+	}
+}
+
+func (m *Minimap) DrawQuestMarker(screen *ebiten.Image) {
+	for _, marker := range m.questMarker {
+		marker.questMarkerOpts.GeoM.Reset()
+		marker.questMarkerOpts.ColorM.Reset()
+
+		if m.showmarker {
+			marker.questMarkerOpts.GeoM.Translate(m.PositionOfMarker(marker).X, m.PositionOfMarker(marker).Y)
+			marker.questMarkerOpts.ColorM.Scale(marker.markerColor.R, marker.markerColor.G, marker.markerColor.B, marker.markerColor.A)
+			screen.DrawImage(marker.questMarker, marker.questMarkerOpts)
+		}
+	}
+}
+
+func (m *Minimap) PositionOfMarker(questMarker QuestMarker) Vec2d {
+	return Vec2d{X: m.position.X + questMarker.sectorX*questMarker.questMarkerWidth,
+		Y: m.position.Y + questMarker.sectorY*questMarker.questMarkerHeight}
 }
 
 func (m *Minimap) Draw(screen *ebiten.Image) {
@@ -119,17 +122,16 @@ func (m *Minimap) Draw(screen *ebiten.Image) {
 
 	m.DrawPixels(screen)
 	m.DrawQuestMarker(screen)
-	m.gameArea.ShipIsInWhichSector(screen)
 
 }
 
-func (m *Minimap) AppendPositionPixels(test PositionPixels) {
-	m.Pixels = append(m.Pixels, test)
+func (m *Minimap) AppendPositionPixels(test MapMarker) {
+	m.MapMarker = append(m.MapMarker, test)
 }
 
 func (m *Minimap) DrawPixels(screen *ebiten.Image) {
 
-	for _, j := range m.Pixels {
+	for _, j := range m.MapMarker {
 		j.DrawOnMap(screen, m.position.X, m.width, m.height, m.gameArea.Width(), m.gameArea.Height())
 	}
 
@@ -144,6 +146,3 @@ func (m *Minimap) Update() error {
 	return nil
 }
 
-func (m *Minimap) Status() bool {
-	return true
-}
