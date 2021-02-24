@@ -15,7 +15,7 @@ type BundledFloatingObject struct {
 	position                   Vec2d
 	rotation, thrust           float64
 	rotationSpeed              float64
-	met                        []*FloatingObject
+	floatingObjects            []*FloatingObject
 	exploded, destroyed        bool
 	width, height              float64
 	otherForce                 Vec2d
@@ -24,14 +24,15 @@ type BundledFloatingObject struct {
 	particles                  particleSystems.ParticlePack
 }
 
+// NewBundledFloatingObject creates a new bundle of FloatingObjects.
 func NewBundledFloatingObject(position Vec2d, w, h float64) *BundledFloatingObject {
-	p := &BundledFloatingObject{
+	bfo := &BundledFloatingObject{
 		bundledObjectsImageOptions: &ebiten.DrawImageOptions{},
 		rotation:                   0,
 		thrust:                     0,
 		rotationSpeed:              RandFloats(-0.5, 0.5),
 		position:                   position,
-		met:                        nil,
+		floatingObjects:            nil,
 		exploded:                   false,
 		destroyed:                  false,
 		width:                      w,
@@ -41,7 +42,7 @@ func NewBundledFloatingObject(position Vec2d, w, h float64) *BundledFloatingObje
 	}
 
 	for j := 1; j < RandInts(3, 5); j++ {
-		p.met = append(p.met, NewFloatingObject(float64((360/j)+RandInts(0, 360)), false, true, Vec2d{}, Fcolor{
+		bfo.floatingObjects = append(bfo.floatingObjects, NewFloatingObject(float64((360/j)+RandInts(0, 360)), false, true, Vec2d{}, Fcolor{
 			R: 1,
 			G: 1,
 			B: 1,
@@ -49,33 +50,36 @@ func NewBundledFloatingObject(position Vec2d, w, h float64) *BundledFloatingObje
 		}))
 	}
 
-	for _, j := range p.met {
-		p.mass += j.mass
+	for _, floatingObject := range bfo.floatingObjects {
+		bfo.mass += floatingObject.mass
 	}
 
-	p.particles = particleSystems.NewParticlePack(200)
+	bfo.particles = particleSystems.NewParticlePack(200)
 
-	return p
+	return bfo
 }
 
+// FloatingObjects returns all Objects that are PArt of the BundledFloatingObject.
 func (b *BundledFloatingObject) FloatingObjects() []*FloatingObject {
-	return b.met
+	return b.floatingObjects
 }
 
+// ExplodeParticles animates a particle explosion.
 func (b *BundledFloatingObject) ExplodeParticles() {
 	b.particles.Explode(b.Position())
 }
 
+// Explode separates our bundled Object.
 func (b *BundledFloatingObject) Explode() {
 	b.exploded = true
 	b.ExplodeParticles()
 
-	for _, j := range b.met {
-		j.isSeparated = true
-		j.coreRotation = float64(RandInts(0, 360))
-		j.thrust = RandFloats(-1, 1)
+	for _, floatingObject := range b.floatingObjects {
+		floatingObject.isSeparated = true
+		floatingObject.thrust = RandFloats(-1, 1)
 	}
 }
+
 
 func (b *BundledFloatingObject) BoundingBox() Rect {
 	if !b.exploded {
@@ -87,14 +91,10 @@ func (b *BundledFloatingObject) BoundingBox() Rect {
 		}
 	}
 
-	return Rect{
-		Left:   0,
-		Top:    0,
-		Right:  0,
-		Bottom: 0,
-	}
+	return Rect{}
 }
 
+// ApplyDamage reduces health of the object.
 func (b *BundledFloatingObject) ApplyDamage(damage float64) {
 	if b.health < 20 {
 		b.Explode()
@@ -104,11 +104,11 @@ func (b *BundledFloatingObject) ApplyDamage(damage float64) {
 }
 
 func (b *BundledFloatingObject) Width() float64 {
-	return b.width * ScaleFactor
+	return b.width
 }
 
 func (b *BundledFloatingObject) Height() float64 {
-	return b.height * ScaleFactor
+	return b.height
 }
 
 func (b *BundledFloatingObject) Position() Vec2d {
@@ -127,6 +127,7 @@ func (b *BundledFloatingObject) Energy() float64 {
 	return b.thrust
 }
 
+// React applies a new rotation speed to the object.
 func (b *BundledFloatingObject) React() {
 	b.rotationSpeed = RandFloats(-0.5, 0.5)
 }
@@ -154,9 +155,10 @@ func (b *BundledFloatingObject) UpdatePosition() {
 	b.position = b.position.Add(b.otherForce)
 }
 
+// RotateObjectsAroundCenter rotates all FloatingObjects around the center of the BundledFloatingObject.
 func (b *BundledFloatingObject) RotateObjectsAroundCenter() {
 	if !b.exploded {
-		for _, j := range b.met {
+		for _, j := range b.floatingObjects {
 			j.SetRotation(-(b.rotation / 60))
 			j.position = RotatedWithOffset(b.position.X-15, b.position.Y+15,
 				b.position.X, b.position.Y,
@@ -164,16 +166,18 @@ func (b *BundledFloatingObject) RotateObjectsAroundCenter() {
 		}
 	}
 
-	for _, j := range b.met {
+	// If the BundledFloatingObject exploded the parts are updated separately.
+	for _, j := range b.floatingObjects {
 		if b.exploded {
 			err := j.Update()
 			if err != nil {
-				println(fmt.Errorf("error:aa %w", err))
+				println(fmt.Errorf("error: %w", err))
 			}
 		}
 	}
 }
 
+// DecayAccelerationOverTime slows the object down if its too fast.
 func (b *BundledFloatingObject) DecayAccelerationOverTime() {
 	decay := 1 - (Elapsed / b.mass)
 
@@ -194,6 +198,7 @@ func (b *BundledFloatingObject) DecayAccelerationOverTime() {
 	}
 }
 
+// Draw draws in fact just the FloatingObjects.
 func (b *BundledFloatingObject) Draw(screen *ebiten.Image) {
 	b.particles.Draw(screen)
 	b.bundledObjectsImageOptions.GeoM.Reset()
@@ -202,11 +207,12 @@ func (b *BundledFloatingObject) Draw(screen *ebiten.Image) {
 	b.bundledObjectsImageOptions.GeoM.Rotate(b.rotation)
 	b.bundledObjectsImageOptions.GeoM.Translate(b.position.X+ViewPortX, b.position.Y+ViewPortY)
 
-	for _, j := range b.met {
+	for _, j := range b.floatingObjects {
 		j.Draw(screen)
 	}
 }
 
+// Update our position and state values.
 func (b *BundledFloatingObject) Update() error {
 	b.ResetPosition()
 	b.DecayAccelerationOverTime()

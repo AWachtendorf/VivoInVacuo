@@ -8,7 +8,10 @@ type Time struct {
 	Elapsed float64
 }
 
-var newTime, oldTime, Elapsed float64
+var (
+	Elapsed          float64
+	newTime, oldTime float64
+)
 
 func (t *Time) Duration() float64 {
 	newTime = float64(time.Now().UnixNano())

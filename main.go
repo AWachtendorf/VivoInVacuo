@@ -9,10 +9,11 @@ import (
 )
 
 func main() {
+
 	g := Game{}
 	g.Setup()
 	ebiten.SetWindowSize(ScreenWidth, ScreenHeight)
-	ebiten.SetWindowTitle("Filter (Ebiten Demo)")
+	ebiten.SetWindowTitle("Vivo In Vacuo")
 	if err := ebiten.RunGame(&g); err != nil {
 		log.Fatal(err)
 	}

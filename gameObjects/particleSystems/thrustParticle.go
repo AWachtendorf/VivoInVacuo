@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-
+// A Particle is a small image that is used in whole batches.
 type Particle struct {
 	particleImage        *ebiten.Image
 	particleImageOptions *ebiten.DrawImageOptions
@@ -27,18 +27,17 @@ type Particle struct {
 	particleAlpha FloatAnimation
 }
 
-
+// OnDraw executes draw commands.
 func (p *Particle) OnDraw(screen *ebiten.Image) {
 	p.CheckState()
-	p.drawPart(screen, p.speed)
+	p.DrawPart(screen, p.speed)
 }
-
 
 func (p *Particle) IsAvailable() bool {
 	return p.available
 }
 
-
+// CheckState returns true if the lifetime is over.
 func (p *Particle) CheckState() bool {
 	p.current = time.Duration(time.Now().UnixNano())
 	if p.current > p.starttime+p.lifetime {
@@ -49,7 +48,7 @@ func (p *Particle) CheckState() bool {
 	return p.available
 }
 
-//simple start function for particle, sets only startpos and direction
+// Start function for particle, sets only start position and direction
 func (p *Particle) Start(angle float64, startPos Vec2d, speed float64) {
 
 		p.particleAlpha = NewLinearFloatAnimation(p.lifetime, 1, 0)
@@ -57,13 +56,13 @@ func (p *Particle) Start(angle float64, startPos Vec2d, speed float64) {
 		p.position = startPos
 		p.speed = speed
 		rotation := angle * (math.Pi / 180) //the gameObjects flies in the angled position
-		rotationvec := Vec2d{math.Cos(rotation), math.Sin(rotation)}
+		rotationvec := Vec2d{X: math.Cos(rotation), Y: math.Sin(rotation)}
 		p.direction = rotationvec
 
 }
 
-// Particles are only drawn as long as they AREN'T available
-func (p *Particle) drawPart(screen *ebiten.Image, speed float64) {
+// DrawPart draws particles as long as the are not available.
+func (p *Particle) DrawPart(screen *ebiten.Image, speed float64) {
 
 	if !p.available {
 		p.particleImageOptions.GeoM.Reset()
@@ -81,13 +80,13 @@ func (p *Particle) drawPart(screen *ebiten.Image, speed float64) {
 	}
 }
 
-
+// NewParticle creates a new Particle.
 func NewParticle(image *ebiten.Image) *Particle {
 	part := &Particle{
 		particleImage:        image,
 		particleImageOptions: &ebiten.DrawImageOptions{},
-		scale:                RandFloats(1,4),
-		lifetime:             time.Millisecond * (250 + time.Duration(rand.Intn(250)))}
-	part.particleImageOptions.Filter = ebiten.FilterNearest
+		scale:                RandFloats(0.5,2),
+		lifetime:             time.Millisecond * (100 + time.Duration(rand.Intn(250)))}
+
 	return part
 }

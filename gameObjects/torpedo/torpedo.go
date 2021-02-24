@@ -8,8 +8,6 @@ import (
 	"time"
 )
 
-
-
 type TorpedoLifeState int
 
 const (
@@ -36,7 +34,7 @@ type Torpedo struct {
 	lifetime            FloatAnimation           // we misuse the FloatAnimation as a lifetime counter, if launched. Otherwise nil.
 	lifetimeDuration    time.Duration            // the configurable life time of a gameObjects until it respawns
 	Damage              float64
-	}
+}
 
 // NewTorpedo creates a new ready-to-use instance
 func NewTorpedo(img *ebiten.Image) *Torpedo {
@@ -51,8 +49,9 @@ func NewTorpedo(img *ebiten.Image) *Torpedo {
 		color1:              Fcolor{B: 1, A: 0.9},
 		lifetimeDuration:    3000 * time.Millisecond,
 		Damage:              100,
-			}
-			t.torpedoimageOptions.CompositeMode = ebiten.CompositeModeLighter
+	}
+	t.torpedoimageOptions.CompositeMode = ebiten.CompositeModeLighter
+	t.torpedoimageOptions.Filter = ebiten.FilterNearest
 
 	return t
 }
@@ -88,11 +87,9 @@ func (t *Torpedo) Fire(startPos Vec2d, rotDegree float64) {
 	t.dir = Vec2d{X: math.Cos(rotationRadiant), Y: math.Sin(rotationRadiant)} // the rotation as a vector
 }
 
-
 func (t *Torpedo) Width() float64 {
 	return t.scale * ScaleFactor * t.width
 }
-
 
 func (t *Torpedo) Height() float64 {
 	return t.scale * ScaleFactor * t.height
@@ -102,14 +99,15 @@ func (t *Torpedo) Height() float64 {
 func (t *Torpedo) BoundingBox() Rect {
 	visibleStyle := 16.0
 	return Rect{
-		Left:   ViewPortX +t.position.X - t.Width()/visibleStyle,
-		Top:     ViewPortY+t.position.Y - t.Height()/visibleStyle,
-		Right:   ViewPortX + t.position.X + t.Width()/visibleStyle,
-		Bottom: ViewPortY+t.position.Y + t.Height()/visibleStyle}
+		Left:   t.Position().X - t.Width()/visibleStyle,
+		Top:    t.Position().Y - t.Height()/visibleStyle,
+		Right:  t.Position().X + t.Width()/visibleStyle,
+		Bottom: t.Position().Y + t.Height()/visibleStyle}
 }
 
 func (t *Torpedo) Position() Vec2d {
-	return t.position
+	return Vec2d{X: t.position.X + ViewPortX, Y: t.position.Y + ViewPortY}
+
 }
 
 // Hits returns true if this torpedoes intersects with the given Object
@@ -118,7 +116,7 @@ func (t *Torpedo) Hits(state bool) bool {
 }
 
 func (t *Torpedo) OnDraw(screen *ebiten.Image) {
-	speed := Elapsed  // just some experimental value
+	speed := 15.0 // just some experimental value
 
 	switch t.state {
 	case Armed:
@@ -157,10 +155,10 @@ func (t *Torpedo) OnDraw(screen *ebiten.Image) {
 // drawImg is extracted, because we draw multiple times per gameObjects to create a nice visual effect
 func (t *Torpedo) drawImg(screen *ebiten.Image, rot float64, scale float64, color Fcolor) {
 	t.torpedoimageOptions.GeoM.Reset()
-	t.torpedoimageOptions.GeoM.Translate(-t.width/2, -t.height/2)    // move pivot to staticParticleImage center
-	t.torpedoimageOptions.GeoM.Rotate(rot * (math.Pi / 180))         // let it rotate fast
-	t.torpedoimageOptions.GeoM.Scale(ScaleFactor, ScaleFactor)       // use the display scale, so that the gameObjects has visually the same size
-	t.torpedoimageOptions.GeoM.Scale(t.scale*scale, t.scale*scale)   // scale the local object coordinates
+	t.torpedoimageOptions.GeoM.Translate(-t.width/2, -t.height/2)                        // move pivot to staticParticleImage center
+	t.torpedoimageOptions.GeoM.Rotate(rot * (math.Pi / 180))                             // let it rotate fast
+	t.torpedoimageOptions.GeoM.Scale(ScaleFactor, ScaleFactor)                           // use the display scale, so that the gameObjects has visually the same size
+	t.torpedoimageOptions.GeoM.Scale(t.scale*scale, t.scale*scale)                       // scale the local object coordinates
 	t.torpedoimageOptions.GeoM.Translate(t.position.X+ViewPortX, t.position.Y+ViewPortY) // move gameObjects center to the actual coordinates
 
 	t.torpedoimageOptions.ColorM.Reset()

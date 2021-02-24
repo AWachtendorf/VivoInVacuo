@@ -43,7 +43,7 @@ func NewFloatingObject(diff float64, isseparated, isrock bool, position Vec2d, c
 	pix := ebiten.NewImage(2, 2)
 	pix.Fill(colornames.White)
 
-	m := &FloatingObject{
+	fo := &FloatingObject{
 		objectImage:                 newimg,
 		objectImageOptions:          &ebiten.DrawImageOptions{},
 		positionPixelImage:          pix,
@@ -63,12 +63,12 @@ func NewFloatingObject(diff float64, isseparated, isrock bool, position Vec2d, c
 		droppedItem:                 false,
 		isRock:                      isrock,
 	}
-	m.explodeRotation = NewLinearFloatAnimation(2000*time.Millisecond, 1, 720)
-	m.explodeAlpha = NewLinearFloatAnimation(2000*time.Millisecond, 1, 0)
-	m.idleAfterSeparation = NewLinearFloatAnimation(100*time.Millisecond, 1, 0)
-	m.particlePack = particleSystems.NewParticlePack(100)
+	fo.explodeRotation = NewLinearFloatAnimation(2000*time.Millisecond, 1, 720)
+	fo.explodeAlpha = NewLinearFloatAnimation(2000*time.Millisecond, 1, 0)
+	fo.idleAfterSeparation = NewLinearFloatAnimation(100*time.Millisecond, 1, 0)
+	fo.particlePack = particleSystems.NewParticlePack(100)
 
-	return m
+	return fo
 }
 
 // SetRotation passes a new value for the rotation speed.
@@ -183,27 +183,10 @@ func (fo *FloatingObject) ResetPosition() {
 	}
 }
 
-func (fo *FloatingObject) DrawFloatingObject(screen *ebiten.Image, rot float64, color Fcolor) {
-	fo.objectImageOptions.GeoM.Reset()
-	fo.objectImageOptions.GeoM.Translate(-(fo.width / 2), -(fo.height / 2))
-	fo.objectImageOptions.GeoM.Rotate(45 * math.Pi / 180)
-	fo.objectImageOptions.GeoM.Rotate(fo.coreRotation + rot)
-	fo.objectImageOptions.GeoM.Translate(fo.position.X+ViewPortX, fo.position.Y+ViewPortY)
-	fo.objectImageOptions.ColorM.Scale(color.R, color.G, color.B, color.A)
 
-	if fo.position.X+(ViewPortX) >= -100 &&
-		fo.position.X+(ViewPortX) <= ScreenWidth+100 &&
-		fo.position.Y+(ViewPortY) >= -100 &&
-		fo.position.Y+(ViewPortY) <= ScreenHeight+100 {
-		screen.DrawImage(fo.objectImage, fo.objectImageOptions)
-	}
-}
-
-// DecayAccelerationOverTime slows the object down if its to fast.
+// DecayAccelerationOverTime slows the object down if its too fast.
 func (fo *FloatingObject) DecayAccelerationOverTime() {
 	decay := 1 - (Elapsed / fo.mass)
-
-	fo.thrust *= decay
 
 	if fo.otherForce.X < -1.0 {
 		fo.otherForce.X *= decay
@@ -222,7 +205,7 @@ func (fo *FloatingObject) DecayAccelerationOverTime() {
 	}
 }
 
-// DrawOnMap draw the Position on the MiniMal via an Interface.
+// DrawOnMap draw the Position on the MiniMap via an Interface.
 func (fo *FloatingObject) DrawOnMap(screen *ebiten.Image, mapposX, mapwidth, mapheight, gameareawidth, gameareheight float64) {
 	fo.positionPixelOptions.GeoM.Reset()
 	fo.positionPixelOptions.GeoM.Translate(
@@ -231,6 +214,23 @@ func (fo *FloatingObject) DrawOnMap(screen *ebiten.Image, mapposX, mapwidth, map
 
 	if fo.Status() {
 		screen.DrawImage(fo.positionPixelImage, fo.positionPixelOptions)
+	}
+}
+
+// DrawFloatingObject draws our FloatingObject. Drawing stops if the Object is out of screen.
+func (fo *FloatingObject) DrawFloatingObject(screen *ebiten.Image, rot float64, color Fcolor) {
+	fo.objectImageOptions.GeoM.Reset()
+	fo.objectImageOptions.GeoM.Translate(-(fo.width / 2), -(fo.height / 2))
+	fo.objectImageOptions.GeoM.Rotate(45 * math.Pi / 180)
+	fo.objectImageOptions.GeoM.Rotate(fo.coreRotation + rot)
+	fo.objectImageOptions.GeoM.Translate(fo.position.X+ViewPortX, fo.position.Y+ViewPortY)
+	fo.objectImageOptions.ColorM.Scale(color.R, color.G, color.B, color.A)
+
+	if fo.position.X+(ViewPortX) >= -100 &&
+		fo.position.X+(ViewPortX) <= ScreenWidth+100 &&
+		fo.position.Y+(ViewPortY) >= -100 &&
+		fo.position.Y+(ViewPortY) <= ScreenHeight+100 {
+		screen.DrawImage(fo.objectImage, fo.objectImageOptions)
 	}
 }
 
@@ -246,7 +246,7 @@ func (fo *FloatingObject) Draw(screen *ebiten.Image) {
 		fo.colorOfObject.SetAlpha(fo.explodeAlpha.Current()))
 }
 
-// Update translates to position.
+// Update translates position values.
 func (fo *FloatingObject) Update() error {
 	if fo.isSeparated {
 		fo.idleAfterSeparation.Apply(Elapsed)

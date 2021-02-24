@@ -4,15 +4,16 @@ import (
 	"bytes"
 	"fmt"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/assets"
-	. "github.com/AWachtendorf/VivoInVacuo/v2/gameenvorinment/background"
-	. "github.com/AWachtendorf/VivoInVacuo/v2/gameenvorinment/gameArea"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/gameObjects/collectables"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/gameObjects/floatingobjects"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/gameObjects/particleSystems"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/gameObjects/playerShip"
+	. "github.com/AWachtendorf/VivoInVacuo/v2/gameenvorinment/background"
+	. "github.com/AWachtendorf/VivoInVacuo/v2/gameenvorinment/gameArea"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/mathsandhelper"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/ui/minimap"
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"image"
 	"log"
 	"math"
@@ -87,6 +88,8 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	for _, r := range g.renderables {
 		r.Draw(screen)
 	}
+	ebitenutil.DebugPrint(screen, fmt.Sprintf("\n\n\n\nTPS: %v" ,ebiten.CurrentTPS()))
+	ebitenutil.DebugPrint(screen, fmt.Sprintf("\n\n\n\n\nFPS: %v" ,ebiten.CurrentFPS()))
 }
 
 func (g *Game) dropItems() {
@@ -166,7 +169,7 @@ func (g *Game) applyTorpedos() {
 			}
 			if t.IsActive() && t.BoundingBox().Intersects(j.BoundingBox()) {
 				t.Explode()
-				collisionDir := j.Position().Sub(t.Position()).Norm()
+				collisionDir := (j.Position().Sub(t.Position())).Norm()
 				knockback := t.Damage * 10
 				collission := collisionDir.Div(j.Mass()/knockback, j.Mass()/knockback)
 				j.Applyforce(collission)
@@ -217,10 +220,10 @@ func (g *Game) Setup() {
 	g.createMockedObjects()
 
 	g.createBackGroundParticles()
-
-	g.createBackgroundGalaxies(20, 40)
-	g.createBackgroundGalaxies(40, 15)
-	g.createBackgroundGalaxies(60, 30)
+	//
+	//g.createBackgroundGalaxies(20, 40)
+	//g.createBackgroundGalaxies(40, 15)
+	//g.createBackgroundGalaxies(60, 30)
 
 	g.renderables = append(g.renderables, backGroundLayer2, backGroundLayer1, backGroundLayer0, g.ship, g.miniMap)
 	g.readupdate = append(g.readupdate, backGroundLayer2, backGroundLayer1, backGroundLayer0, g.ship, g.spaceArea, elapsedTime, g.miniMap)
@@ -288,7 +291,7 @@ func (g *Game) createRandomObject1() {
 }
 
 func (g *Game) createBackGroundParticles() {
-	for i := 0; i < 30000; i++ {
+	for i := 0; i < 20000; i++ {
 		g.renderables = append(g.renderables, NewStaticParticle(RandFloats(0, WorldWidth), RandFloats(0, WorldHeight), RandFloats(1, 2)))
 	}
 }

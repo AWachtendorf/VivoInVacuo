@@ -6,6 +6,7 @@ import (
 	"golang.org/x/image/colornames"
 )
 
+// StaticParticle is a static particle that has just a position.
 type StaticParticle struct {
 	staticParticleImage        *ebiten.Image
 	staticParticleImageOptions *ebiten.DrawImageOptions
@@ -29,6 +30,7 @@ func (s *StaticParticle) Draw(screen *ebiten.Image) {
 	}
 }
 
+// NewStaticParticle creates a particle with just a static position in the game world.
 func NewStaticParticle(x, y, scl float64) *StaticParticle {
 	newPartImg := ebiten.NewImage(1, 1)
 	newPartImg.Fill(colornames.White)

@@ -142,8 +142,6 @@ func NewShip(img, torpedoImg *ebiten.Image, torpedos int) *Ship {
 		uiText:                    &Text{},
 		otherText:                 &Text{},
 	}
-	s.shipImageOptions.Filter = ebiten.FilterLinear
-	s.shipImageOptions.CompositeMode = ebiten.CompositeModeLighter
 
 	s.uiText.SetupText(15, fonts.PressStart2P_ttf)
 	s.otherText.SetupText(20, fonts.MPlus1pRegular_ttf)
