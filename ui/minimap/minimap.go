@@ -21,7 +21,7 @@ type Minimap struct {
 	gameArea      *GameArea
 	MapMarker     []MapMarker
 	questMarker   []QuestMarker
-	showmarker    bool
+	showMarker    bool
 	position      Vec2d
 	width, height float64
 }
@@ -98,7 +98,7 @@ func (m *Minimap) DrawQuestMarker(screen *ebiten.Image) {
 		marker.questMarkerOpts.GeoM.Reset()
 		marker.questMarkerOpts.ColorM.Reset()
 
-		if m.showmarker {
+		if m.showMarker {
 			marker.questMarkerOpts.GeoM.Translate(m.PositionOfMarker(marker).X, m.PositionOfMarker(marker).Y)
 			marker.questMarkerOpts.ColorM.Scale(marker.markerColor.R, marker.markerColor.G, marker.markerColor.B, marker.markerColor.A)
 			screen.DrawImage(marker.questMarker, marker.questMarkerOpts)
@@ -139,9 +139,9 @@ func (m *Minimap) DrawPixels(screen *ebiten.Image) {
 
 func (m *Minimap) Update() error {
 	if ebiten.IsKeyPressed(ebiten.KeyH) {
-		m.showmarker = true
+		m.showMarker = true
 	} else {
-		m.showmarker = false
+		m.showMarker = false
 	}
 	return nil
 }

@@ -11,10 +11,51 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/examples/resources/fonts"
 	"golang.org/x/image/colornames"
+	"time"
 )
 
+type GunType int
+
+//single - strong but slow
+//double - normal amount, middle
+//gatling - less damage faster
+const (
+	single GunType = iota
+	double
+	gatling
+)
+
+type CargoType int
+
+//small - less mass, less hull, more speed, less cargospace
+//middle - middle values
+//large - large cargo, large mass, less speed, more hull
+
+const (
+	smallTrunk CargoType = iota
+	middleTrunk
+	largeTrunk
+)
+
+type CockpitType int
+
+//smallShield - small shield fast reg
+//medShield - med shield, med reg
+//largeShield - large shield , slow reg
+
+const (
+	smallShield CockpitType = iota
+	medShield
+	largeShield
+)
+
+// Ship is our player character.
 type Ship struct {
-	shipImage                 *ebiten.Image
+	shipBase    *ebiten.Image
+	shipCockpit *ebiten.Image
+	shipCargo   *ebiten.Image
+	shipGun     *ebiten.Image
+
 	shipImageOptions          *ebiten.DrawImageOptions
 	positionPixelImage        *ebiten.Image
 	positionPixelImageOptions *ebiten.DrawImageOptions
@@ -31,8 +72,9 @@ type Ship struct {
 	shieldMax, hullMax float64
 	repairKit          float64
 
-	healthBar    *StatusBar
-	shieldBar    *StatusBar
+	healthBar *StatusBar
+	shieldBar *StatusBar
+
 	torpedoes    []*torpedo.Torpedo
 	particlePack particleSystems.ParticlePack
 
@@ -44,6 +86,13 @@ type Ship struct {
 	explodeScale    FloatAnimation
 	uiText          *Text
 	otherText       *Text
+
+	gunType     GunType
+	cockPitType CockpitType
+	cargoType   CargoType
+
+	idleTime   FloatAnimation
+	chargeTime FloatAnimation
 }
 
 func (s *Ship) BoundingBox() Rect {
@@ -72,7 +121,7 @@ func (s *Ship) Position() Vec2d {
 }
 
 func (s *Ship) Image() *ebiten.Image {
-	return s.shipImage
+	return s.shipBase
 }
 
 func (s *Ship) Options() *ebiten.DrawImageOptions {
@@ -115,12 +164,16 @@ func (s *Ship) Inventory() *Inventory {
 	return s.inventory
 }
 
-func NewShip(img, torpedoImg *ebiten.Image, torpedos int) *Ship {
-	w, h := img.Size()
+// NewShip creates a new Ship.
+func NewShip(base, cockpit, cargo, gun, torpedoImg *ebiten.Image, torpedos int) *Ship {
+	w, h := base.Size()
 	pix := ebiten.NewImage(2, 2)
 	pix.Fill(colornames.Darkred)
 	s := &Ship{
-		shipImage:                 img,
+		shipBase:                  base,
+		shipCockpit:               cockpit,
+		shipCargo:                 cargo,
+		shipGun:                   gun,
 		shipImageOptions:          &ebiten.DrawImageOptions{},
 		positionPixelImage:        pix,
 		positionPixelImageOptions: &ebiten.DrawImageOptions{},
@@ -153,6 +206,7 @@ func NewShip(img, torpedoImg *ebiten.Image, torpedos int) *Ship {
 		s.torpedoes = append(s.torpedoes, torpedo.NewTorpedo(torpedoImg))
 	}
 	s.particlePack = particleSystems.NewParticlePack(360)
-
+	s.idleTime = NewLinearFloatAnimation(100*time.Millisecond, 0, 0)
+	s.chargeTime = NewLinearFloatAnimation(1000*time.Millisecond, 0, 0)
 	return s
 }

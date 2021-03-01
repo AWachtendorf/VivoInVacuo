@@ -1,5 +1,6 @@
 package playerShip
 
+// ApplyDamage changes and animates the ShieldBar and HealthBar.
 func (s *Ship) ApplyDamage(damage float64) {
 	if s.shieldBar.Percentage() <= 10 {
 		s.healthBar.ApplyDamage(damage)

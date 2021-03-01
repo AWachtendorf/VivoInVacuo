@@ -23,7 +23,8 @@ func (r Rect) Intersects(g Rect) bool {
 	return r.Left < g.Right && g.Left < r.Right && r.Top < g.Bottom && g.Top < r.Bottom
 }
 
-
+// SectorBounds returns a rectangle that's the size of one single sector in the GameWorld.
+// Sectors are used for QuestMarkers on the MiniMap and also for World Position ui.
 func SectorBounds(X, Y float64) Rect {
 	lengthOfSectorX := float64(WorldWidth / Sectors)
 	lengthOfSectorY := float64(WorldHeight / Sectors)
@@ -42,7 +43,7 @@ func SectorBounds(X, Y float64) Rect {
 }
 
 // SpawnInRandomSector spawns objects in a specific Sector. The spawn position is in the bounds of the sector,
-// but then randomized.
+// but ultimately randomized within the Sector bounds.
 func  SpawnInRandomSector(X, Y float64) Vec2d {
 	sector := SectorBounds(X, Y)
 	return Vec2d{X: RandFloats(sector.Left, sector.Right),

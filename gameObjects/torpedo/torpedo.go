@@ -33,6 +33,8 @@ type Torpedo struct {
 	explodingScale      FloatAnimation           // when exploding, the torpedoes goes big and fades to invisible and becomes armed automatically.
 	lifetime            FloatAnimation           // we misuse the FloatAnimation as a lifetime counter, if launched. Otherwise nil.
 	lifetimeDuration    time.Duration            // the configurable life time of a gameObjects until it respawns
+	idletime FloatAnimation
+	idletimeDuration            time.Duration
 	Damage              float64
 }
 
@@ -45,9 +47,10 @@ func NewTorpedo(img *ebiten.Image) *Torpedo {
 		width:               float64(w),
 		height:              float64(h),
 		scale:               0.5,
-		color0:              Fcolor{G: 1, A: 1}, // only keep the red color channel of the texture
-		color1:              Fcolor{B: 1, A: 0.9},
+		color0:              Fcolor{G: 0.5, A: 1}, // only keep the red color channel of the texture
+		color1:              Fcolor{B: 0.8, A: 0.9},
 		lifetimeDuration:    3000 * time.Millisecond,
+		idletimeDuration:            500 * time.Millisecond,
 		Damage:              100,
 	}
 	t.torpedoimageOptions.CompositeMode = ebiten.CompositeModeLighter
@@ -71,7 +74,7 @@ func (t *Torpedo) Explode() {
 	t.state = Exploding
 }
 
-// Resets this gameObjects to be armed
+// Reset this gameObjects to be armed
 func (t *Torpedo) Reset() {
 	t.state = Armed
 }
@@ -79,6 +82,7 @@ func (t *Torpedo) Reset() {
 // Fire sets the state of this gameObjects so that it looks like it has been fired from the given startPos and heading direction.
 func (t *Torpedo) Fire(startPos Vec2d, rotDegree float64) {
 	t.lifetime = NewLinearFloatAnimation(t.lifetimeDuration, 0, 0)
+	t.idletime = NewLinearFloatAnimation(t.idletimeDuration,0,0)
 	t.position = startPos
 	t.explodingAlpha = NewLinearFloatAnimation(500*time.Millisecond, 1, 0)
 	t.explodingScale = NewLinearFloatAnimation(500*time.Millisecond, 1, 10)
@@ -93,6 +97,10 @@ func (t *Torpedo) Width() float64 {
 
 func (t *Torpedo) Height() float64 {
 	return t.scale * ScaleFactor * t.height
+}
+
+func (t *Torpedo)Idle() bool{
+	return t.idletime.Stop()
 }
 
 // BoundingBox returns a bounding rect
@@ -130,6 +138,7 @@ func (t *Torpedo) OnDraw(screen *ebiten.Image) {
 		}
 	case Launched:
 		t.lifetime.Apply(Elapsed)
+		t.idletime.Apply(Elapsed)
 		t.position = t.position.Add(t.dir.Scale(speed, speed)) // once fired, a gameObjects cannot be influenced
 		if t.lifetime.Stop() {
 			t.state = Armed

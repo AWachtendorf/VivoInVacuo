@@ -1,7 +1,6 @@
 package game
 
 import (
-	"bytes"
 	"fmt"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/assets"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/gameObjects/collectables"
@@ -14,8 +13,6 @@ import (
 	. "github.com/AWachtendorf/VivoInVacuo/v2/ui/minimap"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
-	"image"
-	"log"
 	"math"
 	"math/rand"
 	"time"
@@ -181,24 +178,23 @@ func (g *Game) applyTorpedos() {
 	}
 }
 
-func NewImageFromByteSlice(byteSlice []byte) *ebiten.Image {
-	Img, _, err := image.Decode(bytes.NewReader(byteSlice))
-	if err != nil {
-		log.Fatal(err)
-	}
-	return ebiten.NewImageFromImage(Img)
-}
+
 
 func (g *Game) Setup() {
 	rand.Seed(time.Now().UnixNano())
 
-	shipImage := NewImageFromByteSlice(MockShip)
+	shipBase := NewImageFromByteSlice(ShipBase)
+	shipCargoMedium := NewImageFromByteSlice(ShipCargoMedium)
+	shipCockpit := NewImageFromByteSlice(ShipCockpit)
+	shipGunSingle := NewImageFromByteSlice(ShipGunSingle)
+
+
 	torpedoImage := NewImageFromByteSlice(Nova_png)
 	backGroundFarthest := NewImageFromByteSlice(Bg_back)
 	backGroundMiddle := NewImageFromByteSlice(Bg_back_flipped)
 	backGroundNearest := NewImageFromByteSlice(Bg_front)
 
-	g.ship = NewShip(shipImage, torpedoImage, 5)
+	g.ship = NewShip(shipBase,shipCockpit,shipCargoMedium,shipGunSingle, torpedoImage, 30)
 	g.objects = append(g.objects, g.ship)
 	g.spaceArea = NewGameArea(-WorldWidth/2, -WorldHeight/2, g.ship, 15)
 	g.miniMap = NewMinimap(ScreenWidth/5, ScreenWidth/5, ScreenWidth-ScreenWidth/5-4, 4, g.spaceArea)
@@ -220,10 +216,10 @@ func (g *Game) Setup() {
 	g.createMockedObjects()
 
 	g.createBackGroundParticles()
-	//
-	//g.createBackgroundGalaxies(20, 40)
-	//g.createBackgroundGalaxies(40, 15)
-	//g.createBackgroundGalaxies(60, 30)
+
+	g.createBackgroundGalaxies(20, 40)
+	g.createBackgroundGalaxies(40, 15)
+	g.createBackgroundGalaxies(60, 30)
 
 	g.renderables = append(g.renderables, backGroundLayer2, backGroundLayer1, backGroundLayer0, g.ship, g.miniMap)
 	g.readupdate = append(g.readupdate, backGroundLayer2, backGroundLayer1, backGroundLayer0, g.ship, g.spaceArea, elapsedTime, g.miniMap)
