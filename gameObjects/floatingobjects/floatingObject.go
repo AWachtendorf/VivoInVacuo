@@ -227,9 +227,9 @@ func (fo *FloatingObject) DrawFloatingObject(screen *ebiten.Image, rot float64, 
 	fo.objectImageOptions.ColorM.Scale(color.R, color.G, color.B, color.A)
 
 	if fo.position.X+(ViewPortX) >= -100 &&
-		fo.position.X+(ViewPortX) <= ScreenWidth+100 &&
+		fo.position.X+(ViewPortX) <= float64(ScreenWidth+100) &&
 		fo.position.Y+(ViewPortY) >= -100 &&
-		fo.position.Y+(ViewPortY) <= ScreenHeight+100 {
+		fo.position.Y+(ViewPortY) <= float64(ScreenHeight+100) {
 		screen.DrawImage(fo.objectImage, fo.objectImageOptions)
 	}
 }

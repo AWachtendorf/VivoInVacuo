@@ -114,7 +114,7 @@ func (m *Minimap) PositionOfMarker(questMarker QuestMarker) Vec2d {
 func (m *Minimap) Draw(screen *ebiten.Image) {
 	m.mapImageOptions.GeoM.Reset()
 	m.mapBorderImageOptions.GeoM.Reset()
-	m.mapBorderImageOptions.GeoM.Translate(ScreenWidth-ScreenWidth/5-6, 2)
+	m.mapBorderImageOptions.GeoM.Translate(float64(ScreenWidth)-float64(ScreenWidth)/5-6, 2)
 	screen.DrawImage(m.mapBorderImage, m.mapBorderImageOptions)
 
 	m.mapImageOptions.GeoM.Translate(m.position.X, m.position.Y)

@@ -5,12 +5,12 @@ import (
 )
 
 const (
-	ScreenWidth  = 1280
-	ScreenHeight = 960
 	WorldHeight  = 10000
 	WorldWidth   = 10000
 	Sectors = 10
 )
+
+var ScreenWidth,ScreenHeight  =  ebiten.ScreenSizeInFullscreen()
 
 var ScaleFactor = ebiten.DeviceScaleFactor()
 

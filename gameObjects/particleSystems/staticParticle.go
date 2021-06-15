@@ -23,9 +23,9 @@ func (s *StaticParticle) Draw(screen *ebiten.Image) {
 	s.staticParticleImageOptions.GeoM.Reset()
 	s.staticParticleImageOptions.GeoM.Translate(s.position.X+(ViewPortX/10), s.position.Y+(ViewPortY/10))
 	if s.position.X+(ViewPortX/10) >= -10 &&
-		s.position.X+(ViewPortX/10) <= ScreenWidth+10 &&
+		s.position.X+(ViewPortX/10) <= float64(ScreenWidth+10) &&
 		s.position.Y+(ViewPortY/10) >= -10 &&
-		s.position.Y+(ViewPortY/10) <= ScreenHeight+10 {
+		s.position.Y+(ViewPortY/10) <= float64(ScreenHeight+10) {
 		screen.DrawImage(s.staticParticleImage, s.staticParticleImageOptions)
 	}
 }

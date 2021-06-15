@@ -12,14 +12,10 @@ import (
 	. "github.com/AWachtendorf/VivoInVacuo/v2/mathsandhelper"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/ui/minimap"
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"math"
 	"math/rand"
 	"time"
 )
-
-
-
 type Renderable interface {
 	Draw(screen *ebiten.Image)
 }
@@ -85,8 +81,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	for _, r := range g.renderables {
 		r.Draw(screen)
 	}
-	ebitenutil.DebugPrint(screen, fmt.Sprintf("\n\n\n\nTPS: %v" ,ebiten.CurrentTPS()))
-	ebitenutil.DebugPrint(screen, fmt.Sprintf("\n\n\n\n\nFPS: %v" ,ebiten.CurrentFPS()))
 }
 
 func (g *Game) dropItems() {
@@ -178,26 +172,23 @@ func (g *Game) applyTorpedos() {
 	}
 }
 
-
-
 func (g *Game) Setup() {
 	rand.Seed(time.Now().UnixNano())
 
 	shipBase := NewImageFromByteSlice(ShipBase)
-	shipCargoMedium := NewImageFromByteSlice(ShipCargoMedium)
-	shipCockpit := NewImageFromByteSlice(ShipCockpit)
+	shipCargoMedium := NewImageFromByteSlice(CargoMedium)
+	shipCockpit := NewImageFromByteSlice(ShipCockpitMed)
 	shipGunSingle := NewImageFromByteSlice(ShipGunSingle)
-
 
 	torpedoImage := NewImageFromByteSlice(Nova_png)
 	backGroundFarthest := NewImageFromByteSlice(Bg_back)
 	backGroundMiddle := NewImageFromByteSlice(Bg_back_flipped)
 	backGroundNearest := NewImageFromByteSlice(Bg_front)
 
-	g.ship = NewShip(shipBase,shipCockpit,shipCargoMedium,shipGunSingle, torpedoImage, 30)
+	g.ship = NewShip(shipBase, shipCockpit, shipCargoMedium, shipGunSingle, torpedoImage, 30)
 	g.objects = append(g.objects, g.ship)
 	g.spaceArea = NewGameArea(-WorldWidth/2, -WorldHeight/2, g.ship, 15)
-	g.miniMap = NewMinimap(ScreenWidth/5, ScreenWidth/5, ScreenWidth-ScreenWidth/5-4, 4, g.spaceArea)
+	g.miniMap = NewMinimap(float64(ScreenWidth/5), float64(ScreenWidth/5), float64(ScreenWidth-ScreenWidth/5-4), 4, g.spaceArea)
 	g.miniMap.MapMarker = append(g.miniMap.MapMarker, g.ship)
 
 	backGroundLayer2 := NewBackGround(g.ship, Vec2d{X: -100, Y: 100}, backGroundFarthest, &ebiten.DrawImageOptions{}, 0.3)
@@ -227,8 +218,8 @@ func (g *Game) Setup() {
 
 func (g *Game) createMockedObjects() {
 	for i := 0; i < 20; i++ {
-		g.createNewRandomMeteoride()
-		g.createRandomObject()
+		g.createNewRandomBundledFloatingObject()
+		g.createRandomFloatingObject()
 		g.createRandomObject1()
 	}
 }
@@ -237,7 +228,7 @@ func (g *Game) createMockedQuestMarker(secX, secY float64) {
 	g.miniMap.AppendQuestMarkers(g.miniMap.NewQuestMarker(secX, secY))
 }
 
-func (g *Game) createNewRandomMeteoride() {
+func (g *Game) createNewRandomBundledFloatingObject() {
 	nm := NewBundledFloatingObject(Vec2d{X: RandFloats(0, WorldWidth), Y: RandFloats(0, WorldHeight)}, 100, 100)
 	g.readupdate = append(g.readupdate, nm)
 	g.renderables = append(g.renderables, nm)
@@ -251,8 +242,7 @@ func (g *Game) createNewRandomMeteoride() {
 	}
 }
 
-func (g *Game) createRandomObject() {
-
+func (g *Game) createRandomFloatingObject() {
 	obj := NewFloatingObject(0, true, false,
 		SpawnInRandomSector(3, 3),
 		Fcolor{
@@ -287,7 +277,7 @@ func (g *Game) createRandomObject1() {
 }
 
 func (g *Game) createBackGroundParticles() {
-	for i := 0; i < 20000; i++ {
+	for i := 0; i < 2000; i++ {
 		g.renderables = append(g.renderables, NewStaticParticle(RandFloats(0, WorldWidth), RandFloats(0, WorldHeight), RandFloats(1, 2)))
 	}
 }

@@ -63,20 +63,20 @@ func (g *GameArea) Height() float64 {
 // UpdatePosition takes the ships thrust to change the GameArea position.
 func (g *GameArea) UpdatePosition() {
 
-	if g.position.X > ScreenWidth/2 {
-		g.position.X = ScreenWidth/2 - g.Width()
+	if g.position.X > float64(ScreenWidth/2) {
+		g.position.X = float64(ScreenWidth/2) - g.Width()
 	}
 
-	if g.position.X < ScreenWidth/2-g.Width() {
-		g.position.X = ScreenWidth / 2
+	if g.position.X < float64(ScreenWidth/2)-g.Width() {
+		g.position.X = float64(ScreenWidth / 2)
 	}
 
-	if g.position.Y < ScreenHeight/2-g.Height() {
-		g.position.Y = ScreenHeight / 2
+	if g.position.Y < float64(ScreenHeight/2)-g.Height() {
+		g.position.Y = float64(ScreenHeight / 2)
 	}
 
-	if g.position.Y > ScreenHeight/2 {
-		g.position.Y = ScreenHeight/2 - g.Height()
+	if g.position.Y > float64(ScreenHeight/2) {
+		g.position.Y = float64(ScreenHeight/2) - g.Height()
 	}
 
 	rotationRadiant := Rotation

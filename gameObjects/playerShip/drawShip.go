@@ -34,7 +34,6 @@ func (s *Ship) ReadAllDrawCommands(screen *ebiten.Image, rotationRadiant float64
 		t.OnDraw(screen)
 	}
 	s.particlePack.Draw(screen)
-
 	s.DrawInventory(screen)
 	s.DisplayShipSectorPosition(screen)
 	s.healthBar.Draw(screen)

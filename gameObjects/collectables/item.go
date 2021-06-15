@@ -109,9 +109,9 @@ func (i *Item) Draw(screen *ebiten.Image) {
 		i.itemImageOpts.GeoM.Translate(i.position.X+ViewPortX, i.position.Y+ViewPortY)
 
 		if i.position.X+(ViewPortX) >= -100 &&
-			i.position.X+(ViewPortX) <= ScreenWidth+100 &&
+			i.position.X+(ViewPortX) <= float64(ScreenWidth+10) &&
 			i.position.Y+(ViewPortY) >= -100 &&
-			i.position.Y+(ViewPortY) <= ScreenHeight+100 {
+			i.position.Y+(ViewPortY) <= float64(ScreenHeight+10) {
 			screen.DrawImage(i.itemImage, i.itemImageOpts)
 		}
 	}

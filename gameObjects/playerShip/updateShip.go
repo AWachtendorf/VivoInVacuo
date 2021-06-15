@@ -2,12 +2,13 @@ package playerShip
 
 import (
 	. "github.com/AWachtendorf/VivoInVacuo/v2/animation"
-	"github.com/AWachtendorf/VivoInVacuo/v2/assets"
+	. "github.com/AWachtendorf/VivoInVacuo/v2/assets"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/mathsandhelper"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"math"
 	"math/rand"
+	"os"
 	"time"
 )
 
@@ -16,9 +17,9 @@ func (s *Ship) Update() error {
 	s.inventory.Update()
 	s.healthBar.Update()
 	s.shieldBar.Update()
-	s.RenderGunType()
-	s.RenderCockpitType()
-	s.RenderCargoType()
+	//s.UpdateGunType()
+	//s.UpdateCockpitType()
+	//s.UpdateCargoType()
 	s.applyParticles()
 	return nil
 }
@@ -61,9 +62,9 @@ func (s *Ship) ProcessInput() float64 {
 	}
 
 	if ebiten.IsKeyPressed(ebiten.KeyShift) {
-		s.maxThrust = 5
+		s.maxThrust = s.boosted
 	} else {
-		s.maxThrust = 3
+		s.maxThrust = s.unboosted
 	}
 
 	switch s.gunType {
@@ -71,8 +72,8 @@ func (s *Ship) ProcessInput() float64 {
 		if ebiten.IsKeyPressed(ebiten.KeySpace) {
 			s.chargeTime.Apply(Elapsed)
 		}
-		if !ebiten.IsKeyPressed(ebiten.KeySpace) && !s.chargeTime.Stop(){
-			s.chargeTime = NewLinearFloatAnimation(1000 * time.Millisecond,0,0)
+		if !ebiten.IsKeyPressed(ebiten.KeySpace) && !s.chargeTime.Stop() {
+			s.chargeTime = NewLinearFloatAnimation(1000*time.Millisecond, 0, 0)
 		}
 		if !ebiten.IsKeyPressed(ebiten.KeySpace) && s.chargeTime.Stop() {
 			s.fireTorpedo()
@@ -92,20 +93,26 @@ func (s *Ship) ProcessInput() float64 {
 		if s.gunType > 2 {
 			s.gunType = 0
 		}
+		s.UpdateGunType()
 	}
 	if inpututil.IsKeyJustPressed(ebiten.KeyB) {
 		s.cockPitType += 1
 		if s.cockPitType > 2 {
 			s.cockPitType = 0
 		}
+		s.UpdateCockpitType()
 	}
 	if inpututil.IsKeyJustPressed(ebiten.KeyV) {
 		s.cargoType += 1
 		if s.cargoType > 2 {
 			s.cargoType = 0
 		}
+		s.UpdateCargoType()
 	}
 
+	if ebiten.IsKeyPressed(ebiten.KeyAlt) && ebiten.IsKeyPressed(ebiten.KeyTab) {
+		os.Exit(1)
+	}
 
 	// TODO: Currently only for test reasons implemented
 	if inpututil.IsKeyJustPressed(ebiten.KeyP) {
@@ -124,7 +131,7 @@ func (s *Ship) ProcessInput() float64 {
 
 	s.otherForce = s.otherForce.Scale(decay, decay)
 	s.rotation += s.rotationThrust
-	rotationRadiant := s.rotation * (math.Pi / 180) // we need the radiant later a few times, so only calculate once per frame
+	rotationRadiant := s.rotation * (math.Pi / 180)
 
 	if s.rotation > 360 {
 		s.rotation -= 360
@@ -137,48 +144,65 @@ func (s *Ship) ProcessInput() float64 {
 	return rotationRadiant
 }
 
-
-
-func (s *Ship) RenderGunType() {
+func (s *Ship) UpdateGunType() {
 	switch s.gunType {
 	case single:
-		s.shipGun = NewImageFromByteSlice(assets.ShipGunSingle)
+		s.shipGun = NewImageFromByteSlice(ShipGunSingle)
 	case double:
-		s.shipGun = NewImageFromByteSlice(assets.ShipGunDouble)
+		s.shipGun = NewImageFromByteSlice(ShipGunDouble)
 	case gatling:
-		s.shipGun = NewImageFromByteSlice(assets.ShipGunDouble)
+		s.shipGun = NewImageFromByteSlice(ShipGunDouble)
 	default:
-		s.shipGun = NewImageFromByteSlice(assets.ShipGunSingle)
+		s.shipGun = NewImageFromByteSlice(ShipGunSingle)
 	}
 }
 
-func (s *Ship) RenderCockpitType() {
+func (s *Ship) UpdateCockpitType() {
 	switch s.cockPitType {
-	case smallShield:
-		s.shipCockpit = NewImageFromByteSlice(assets.ShipGunSingle)
-	case medShield:
-		s.shipCockpit = NewImageFromByteSlice(assets.ShipGunDouble)
-	case largeShield:
-		s.shipCockpit = NewImageFromByteSlice(assets.ShipGunDouble)
+	case smallCockpit:
+		s.shipCockpit = NewImageFromByteSlice(CockpitSmall)
+		s.shieldMax = 100
+		s.shieldBar.SetRepairKit(1000)
+	case medCockpit:
+		s.shipCockpit = NewImageFromByteSlice(CockpitMedium)
+		s.shieldBar.SetRepairKit(800)
+	case largeCockpit:
+		s.shipCockpit = NewImageFromByteSlice(CockpitLarge)
+		s.shieldBar.SetRepairKit(600)
 	default:
-		s.shipCockpit = NewImageFromByteSlice(assets.ShipGunSingle)
+		s.shipCockpit = NewImageFromByteSlice(CockpitMedium)
+		s.shieldBar.SetRepairKit(800)
 	}
 }
 
-func (s *Ship) RenderCargoType() {
+func (s *Ship) UpdateCargoType() {
 	switch s.cargoType {
 	case smallTrunk:
-		s.shipCargo = NewImageFromByteSlice(assets.ShipGunSingle)
+		s.shipCargo = NewImageFromByteSlice(CargoSmall)
+		s.hullMax = 100
+		s.unboosted = 3
+		s.boosted = s.unboosted + 2
+		s.mass = 1000
 	case middleTrunk:
-		s.shipCargo = NewImageFromByteSlice(assets.ShipGunDouble)
+		s.shipCargo = NewImageFromByteSlice(CargoMedium)
+		s.hullMax = 200
+		s.unboosted = 2
+		s.boosted = s.unboosted + 2
+		s.mass = 2000
 	case largeTrunk:
-		s.shipCargo = NewImageFromByteSlice(assets.ShipGunDouble)
+		s.shipCargo = NewImageFromByteSlice(CargoLarge)
+		s.hullMax = 300
+		s.unboosted = 1
+		s.boosted = s.unboosted + 2
+		s.mass = 3000
 	default:
-		s.shipCargo = NewImageFromByteSlice(assets.ShipGunSingle)
+		s.shipCargo = NewImageFromByteSlice(CargoMedium)
+		s.hullMax = 200
+		s.unboosted = 3
+		s.boosted = s.unboosted + 2
+		s.mass = 2000
 	}
 }
-
-
 
 func (s *Ship) fireTorpedo() {
 
@@ -186,7 +210,7 @@ func (s *Ship) fireTorpedo() {
 	case single:
 		for _, t := range s.torpedoes {
 			if t.IsAvailable() {
-				t.Fire(s.position.Sub(Vec2d{ViewPortX, ViewPortY}), s.rotation)
+				t.Fire(s.position.Sub(Vec2d{X: ViewPortX, Y: ViewPortY}), s.rotation)
 				s.chargeTime = NewLinearFloatAnimation(1000*time.Millisecond, 0, 0)
 				break
 			}

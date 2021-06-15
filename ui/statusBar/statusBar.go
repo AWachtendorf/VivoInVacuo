@@ -72,6 +72,10 @@ func (s *StatusBar) Decrease(damage float64) {
 	s.decreaseAnimation = NewLinearFloatAnimation(500*time.Millisecond, s.currentBarValue, s.currentBarValue-damage)
 }
 
+func (s *StatusBar)SetRepairKit(repairKit float64){
+	s.repairKit = repairKit
+}
+
 func (s *StatusBar) Update() {
 	s.repairHullAndRechargeShield()
 	s.width = int(s.Percentage())
@@ -92,6 +96,6 @@ func (s *StatusBar) repairHullAndRechargeShield() {
 		if s.currentBarValue == s.maxBarValue {
 			s.currentBarValue += 0
 		}
-		s.currentBarValue += charge / 5
+		s.currentBarValue += charge
 	}
 }

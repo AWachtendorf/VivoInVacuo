@@ -39,15 +39,16 @@ const (
 
 type CockpitType int
 
-//smallShield - small shield fast reg
-//medShield - med shield, med reg
-//largeShield - large shield , slow reg
+//smallCockpit - small shield fast reg
+//medCockpit - med shield, med reg
+//largeCockpit - large shield , slow reg
 
 const (
-	smallShield CockpitType = iota
-	medShield
-	largeShield
+	smallCockpit CockpitType = iota
+	medCockpit
+	largeCockpit
 )
+
 
 // Ship is our player character.
 type Ship struct {
@@ -61,13 +62,13 @@ type Ship struct {
 	positionPixelImageOptions *ebiten.DrawImageOptions
 	scale, width, height      float64
 
-	position             Vec2d
-	rotation             float64
-	rotationThrust       float64
-	thrust, maxThrust    float64
-	rotated, accelerated bool
-	otherForce           Vec2d
-	mass                 float64
+	position                   Vec2d
+	rotation                   float64
+	rotationThrust             float64
+	thrust, maxThrust, boosted, unboosted float64
+	rotated, accelerated       bool
+	otherForce                 Vec2d
+	mass                       float64
 
 	shieldMax, hullMax float64
 	repairKit          float64
@@ -181,7 +182,9 @@ func NewShip(base, cockpit, cargo, gun, torpedoImg *ebiten.Image, torpedos int) 
 		rotationThrust:            0,
 		thrust:                    0,
 		maxThrust:                 3,
-		position:                  Vec2d{X: ScreenWidth / 2, Y: ScreenHeight / 2},
+		boosted:                   5,
+		unboosted: 3,
+		position:                  Vec2d{X: float64(ScreenWidth / 2), Y:float64( ScreenHeight / 2)},
 		scale:                     1,
 		width:                     float64(w),
 		height:                    float64(h),
