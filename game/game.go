@@ -3,7 +3,6 @@ package game
 import (
 	"fmt"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/assets"
-	. "github.com/AWachtendorf/VivoInVacuo/v2/gameObjects/collectables"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/gameObjects/floatingobjects"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/gameObjects/particleSystems"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/gameObjects/playerShip"
@@ -12,43 +11,9 @@ import (
 	. "github.com/AWachtendorf/VivoInVacuo/v2/mathsandhelper"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/ui/minimap"
 	"github.com/hajimehoshi/ebiten/v2"
-	"math"
 	"math/rand"
 	"time"
 )
-type Renderable interface {
-	Draw(screen *ebiten.Image)
-}
-
-type Readupdate interface {
-	Update() error
-}
-
-type ItemOwner interface {
-	SpawnItem() *Item
-	Status() bool
-	ItemDropped() bool
-}
-
-type Object interface {
-	BoundingBox() Rect
-	Energy() float64
-	Position() Vec2d
-	Applyforce(force Vec2d)
-	Mass() float64
-	React()
-	ApplyDamage(damage float64)
-}
-
-type Collectable interface {
-	BoundingBox() Rect
-	Position() Vec2d
-	SetPosition(pos Vec2d)
-	SetCollected(isitcollected bool)
-	IsCollected() bool
-	Type() ItemType
-	FollowPosition(pos1, pos2 Vec2d) Vec2d
-}
 
 type Game struct {
 	parallaxBackGrounds []*BackGround
@@ -104,73 +69,6 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 	return ScreenWidth, ScreenHeight
 }
 
-func (g *Game) pickUpCollectables() {
-	ship := g.ship
-	for _, collectable := range g.collectables { // compare it only with all subsequent object, if they match (not with itself and not vice versa)
-		if ship.BoundingBox().Intersects(collectable.BoundingBox()) {
-			collectable.SetPosition(collectable.FollowPosition(Vec2d{X: ship.Position().X - ViewPortX, Y: ship.Position().Y - ViewPortY},
-				Vec2d{X: collectable.Position().X - ViewPortX, Y: collectable.Position().Y - ViewPortY}))
-			x := collectable.Position().Sub(ship.Position()).Abs()
-			if x.X < 1 && x.Y < 1 && !collectable.IsCollected() {
-				g.ship.Inventory().AddToInventory(collectable.Type())
-				collectable.SetCollected(true)
-				collectable = nil
-			}
-		}
-	}
-}
-
-func FollowPosition(pos1, pos2 Vec2d) Vec2d {
-	pos := pos1.Sub(pos2).Norm().Scale(3, 3)
-	pos2.X += pos.X
-	pos2.Y += pos.Y
-	return Vec2d{X: pos2.X, Y: pos2.Y}
-}
-
-func (g *Game) applyCollisions() {
-	// apply our physical hit-test
-	for a, objA := range g.objects { // take each object
-		for b := a + 1; b < len(g.objects); b++ { // compare it only with all subsequent object, if they match (not with itself and not vice versa)
-			objB := g.objects[b]
-			if objA.BoundingBox().Intersects(objB.BoundingBox()) { // do a and b collide with each other?
-				collisionDir := objA.Position().Sub(objB.Position()).Norm()      // the vector of the collision is in general the difference of the two positions
-				totalEnergy := math.Abs(objA.Energy()) + math.Abs(objB.Energy()) // the total energy is absolute value of both ships (not physically correct, because it should be actually a force vector)
-				massDistributionA := objA.Mass() / (objA.Mass() + objB.Mass())   // e.g 5 / (5 + 10) = 0.3 or 5 / (5+5)= 0.5
-				energyShipA := totalEnergy * (1 - massDistributionA)             // the lighter the ship, the more energy it gets => use the inverse: if a ship only weights 25% it gets 75% of the energy
-				energyShipB := totalEnergy * massDistributionA                   // ship b just gets the smaller proportion: ship has 75% of the mass => it gets 25% of the energy
-				collisionDirA := collisionDir.Scale(energyShipA, energyShipA)
-				collisionDirB := collisionDir.Scale(-energyShipB, -energyShipB) // we need to negate one ship direction, depending of the collision dir
-				objA.ApplyDamage(massDistributionA * 100)
-				objB.ApplyDamage(massDistributionA * 100)
-				objA.Applyforce(collisionDirA)
-				objB.Applyforce(collisionDirB)
-				objA.React()
-				objB.React()
-			}
-		}
-	}
-}
-
-// applyTorpedos calculates any gameObjects hits.
-func (g *Game) applyTorpedos() {
-	for _, t := range g.ship.Torpedos() {
-		for i, j := range g.objects {
-			if i == 0 {
-				continue
-			}
-			if t.IsActive() && t.BoundingBox().Intersects(j.BoundingBox()) {
-				t.Explode()
-				collisionDir := (j.Position().Sub(t.Position())).Norm()
-				knockback := t.Damage * 10
-				collission := collisionDir.Div(j.Mass()/knockback, j.Mass()/knockback)
-				j.Applyforce(collission)
-				j.ApplyDamage(t.Damage)
-				j.React()
-				return
-			}
-		}
-	}
-}
 
 func (g *Game) Setup() {
 	rand.Seed(time.Now().UnixNano())
@@ -208,9 +106,9 @@ func (g *Game) Setup() {
 
 	g.createBackGroundParticles()
 
-	g.createBackgroundGalaxies(20, 40)
-	g.createBackgroundGalaxies(40, 15)
-	g.createBackgroundGalaxies(60, 30)
+	//g.createBackgroundGalaxies(20, 40)
+	//g.createBackgroundGalaxies(40, 15)
+	//g.createBackgroundGalaxies(60, 30)
 
 	g.renderables = append(g.renderables, backGroundLayer2, backGroundLayer1, backGroundLayer0, g.ship, g.miniMap)
 	g.readupdate = append(g.readupdate, backGroundLayer2, backGroundLayer1, backGroundLayer0, g.ship, g.spaceArea, elapsedTime, g.miniMap)
@@ -219,8 +117,9 @@ func (g *Game) Setup() {
 func (g *Game) createMockedObjects() {
 	for i := 0; i < 20; i++ {
 		g.createNewRandomBundledFloatingObject()
-		g.createRandomFloatingObject()
-		g.createRandomObject1()
+		g.createRandomFloatingObject(3,3, Fcolor{0,0,1,1})
+		g.createRandomFloatingObject(5,9, Fcolor{1,0,0,1})
+		g.createRandomFloatingObject(6,9, Fcolor{1,1,0,1})
 	}
 }
 
@@ -242,14 +141,14 @@ func (g *Game) createNewRandomBundledFloatingObject() {
 	}
 }
 
-func (g *Game) createRandomFloatingObject() {
+func (g *Game) createRandomFloatingObject(x,y float64, col Fcolor) {
 	obj := NewFloatingObject(0, true, false,
-		SpawnInRandomSector(3, 3),
+		SpawnInRandomSector(x, y),
 		Fcolor{
-			R: 0,
-			G: 1,
-			B: 0,
-			A: 1,
+			R: col.R,
+			G: col.G,
+			B: col.B,
+			A: col.A,
 		})
 	obj.SetRotation(RandFloats(-0.02, 0.02))
 	g.miniMap.AppendPositionPixels(obj)
@@ -259,22 +158,6 @@ func (g *Game) createRandomFloatingObject() {
 	g.itemOwners = append(g.itemOwners, obj)
 }
 
-func (g *Game) createRandomObject1() {
-	newObj := NewFloatingObject(0, true, false,
-		SpawnInRandomSector(7, 7),
-		Fcolor{
-			R: 0,
-			G: 1,
-			B: 0,
-			A: 1,
-		})
-	newObj.SetRotation(RandFloats(-0.02, 0.02))
-	g.miniMap.AppendPositionPixels(newObj)
-	g.readupdate = append(g.readupdate, newObj)
-	g.objects = append(g.objects, newObj)
-	g.renderables = append(g.renderables, newObj)
-	g.itemOwners = append(g.itemOwners, newObj)
-}
 
 func (g *Game) createBackGroundParticles() {
 	for i := 0; i < 2000; i++ {

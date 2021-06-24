@@ -2,7 +2,6 @@ package playerShip
 
 import (
 	. "github.com/AWachtendorf/VivoInVacuo/v2/animation"
-	. "github.com/AWachtendorf/VivoInVacuo/v2/assets"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/mathsandhelper"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
@@ -17,9 +16,6 @@ func (s *Ship) Update() error {
 	s.inventory.Update()
 	s.healthBar.Update()
 	s.shieldBar.Update()
-	//s.UpdateGunType()
-	//s.UpdateCockpitType()
-	//s.UpdateCargoType()
 	s.applyParticles()
 	return nil
 }
@@ -147,30 +143,30 @@ func (s *Ship) ProcessInput() float64 {
 func (s *Ship) UpdateGunType() {
 	switch s.gunType {
 	case single:
-		s.shipGun = NewImageFromByteSlice(ShipGunSingle)
+		s.shipGun = s.shipGunSingle
 	case double:
-		s.shipGun = NewImageFromByteSlice(ShipGunDouble)
+		s.shipGun = s.shipGunDouble
 	case gatling:
-		s.shipGun = NewImageFromByteSlice(ShipGunDouble)
+		s.shipGun = s.shipGunGatling
 	default:
-		s.shipGun = NewImageFromByteSlice(ShipGunSingle)
+		s.shipGun = s.shipGunSingle
 	}
 }
 
 func (s *Ship) UpdateCockpitType() {
 	switch s.cockPitType {
 	case smallCockpit:
-		s.shipCockpit = NewImageFromByteSlice(CockpitSmall)
+		s.shipCockpit = s.shipCockpitSmall
 		s.shieldMax = 100
 		s.shieldBar.SetRepairKit(1000)
 	case medCockpit:
-		s.shipCockpit = NewImageFromByteSlice(CockpitMedium)
+		s.shipCockpit = s.shipCockpitMiddle
 		s.shieldBar.SetRepairKit(800)
 	case largeCockpit:
-		s.shipCockpit = NewImageFromByteSlice(CockpitLarge)
+		s.shipCockpit = s.shipCockpitLarge
 		s.shieldBar.SetRepairKit(600)
 	default:
-		s.shipCockpit = NewImageFromByteSlice(CockpitMedium)
+		s.shipCockpit = s.shipCockpitMiddle
 		s.shieldBar.SetRepairKit(800)
 	}
 }
@@ -178,25 +174,25 @@ func (s *Ship) UpdateCockpitType() {
 func (s *Ship) UpdateCargoType() {
 	switch s.cargoType {
 	case smallTrunk:
-		s.shipCargo = NewImageFromByteSlice(CargoSmall)
+		s.shipCargo = s.shipCargoSmall
 		s.hullMax = 100
 		s.unboosted = 3
 		s.boosted = s.unboosted + 2
 		s.mass = 1000
 	case middleTrunk:
-		s.shipCargo = NewImageFromByteSlice(CargoMedium)
+		s.shipCargo = s.shipCargoMiddle
 		s.hullMax = 200
 		s.unboosted = 2
 		s.boosted = s.unboosted + 2
 		s.mass = 2000
 	case largeTrunk:
-		s.shipCargo = NewImageFromByteSlice(CargoLarge)
+		s.shipCargo = s.shipCargoLarge
 		s.hullMax = 300
 		s.unboosted = 1
 		s.boosted = s.unboosted + 2
 		s.mass = 3000
 	default:
-		s.shipCargo = NewImageFromByteSlice(CargoMedium)
+		s.shipCargo = s.shipCargoMiddle
 		s.hullMax = 200
 		s.unboosted = 3
 		s.boosted = s.unboosted + 2

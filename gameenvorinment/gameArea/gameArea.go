@@ -29,23 +29,6 @@ func NewGameArea(initalX, initalY float64, ship *Ship, amountOfSectors int) *Gam
 	return vp
 }
 
-//// Sector calculates and returns bounds of a Sector.
-//func (g *GameArea) Sector(X, Y float64) Sector {
-//	lengthOfSectorX := float64(WorldWidth / g.sectors)
-//	lengthOfSectorY := float64(WorldHeight / g.sectors)
-//
-//	xmin := X * lengthOfSectorX
-//	xmax := xmin + lengthOfSectorX
-//	ymin := Y * lengthOfSectorY
-//	ymax := ymin + lengthOfSectorY
-//
-//	return Sector{Xmin: xmin, Xmax: xmax, Ymin: ymin, Ymax: ymax}
-//}
-
-
-
-
-
 func (g *GameArea) Width() float64 {
 	return g.width
 }
@@ -53,12 +36,6 @@ func (g *GameArea) Width() float64 {
 func (g *GameArea) Height() float64 {
 	return g.height
 }
-
-
-
-
-
-
 
 // UpdatePosition takes the ships thrust to change the GameArea position.
 func (g *GameArea) UpdatePosition() {

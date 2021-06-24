@@ -2,6 +2,7 @@ package playerShip
 
 import (
 	. "github.com/AWachtendorf/VivoInVacuo/v2/animation"
+	"github.com/AWachtendorf/VivoInVacuo/v2/assets"
 	"github.com/AWachtendorf/VivoInVacuo/v2/gameObjects/particleSystems"
 	"github.com/AWachtendorf/VivoInVacuo/v2/gameObjects/torpedo"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/mathsandhelper"
@@ -54,8 +55,11 @@ const (
 type Ship struct {
 	shipBase    *ebiten.Image
 	shipCockpit *ebiten.Image
+	shipCockpitSmall, shipCockpitMiddle, shipCockpitLarge *ebiten.Image
 	shipCargo   *ebiten.Image
+	shipCargoSmall,shipCargoMiddle,shipCargoLarge *ebiten.Image
 	shipGun     *ebiten.Image
+	shipGunSingle,shipGunDouble,shipGunGatling *ebiten.Image
 
 	shipImageOptions          *ebiten.DrawImageOptions
 	positionPixelImage        *ebiten.Image
@@ -167,14 +171,24 @@ func (s *Ship) Inventory() *Inventory {
 
 // NewShip creates a new Ship.
 func NewShip(base, cockpit, cargo, gun, torpedoImg *ebiten.Image, torpedos int) *Ship {
+
 	w, h := base.Size()
 	pix := ebiten.NewImage(2, 2)
 	pix.Fill(colornames.Darkred)
 	s := &Ship{
 		shipBase:                  base,
 		shipCockpit:               cockpit,
+		shipCockpitSmall:  NewImageFromByteSlice(assets.CockpitSmall),
+		shipCockpitMiddle:  NewImageFromByteSlice(assets.CockpitMedium),
+		shipCockpitLarge:  NewImageFromByteSlice(assets.CockpitLarge),
 		shipCargo:                 cargo,
+		shipCargoSmall:  NewImageFromByteSlice(assets.CargoSmall),
+		shipCargoMiddle:  NewImageFromByteSlice(assets.CargoMedium),
+		shipCargoLarge:  NewImageFromByteSlice(assets.CargoLarge),
 		shipGun:                   gun,
+		shipGunSingle:  NewImageFromByteSlice(assets.ShipGunSingle),
+		shipGunDouble:  NewImageFromByteSlice(assets.ShipGunDouble),
+		shipGunGatling:  NewImageFromByteSlice(assets.ShipGunDouble),
 		shipImageOptions:          &ebiten.DrawImageOptions{},
 		positionPixelImage:        pix,
 		positionPixelImageOptions: &ebiten.DrawImageOptions{},
