@@ -1,3 +1,4 @@
+```
 @startuml
 namespace animation {
     class Animation << (S,Aquamarine) >> {
@@ -565,3 +566,4 @@ namespace viewport {
 "__builtin__.int" #.. "torpedo.TorpedoLifeState"
 "animation.<font color=blue>func</font>(float64) " #.. "animation.Interpolator"
 @enduml
+```
