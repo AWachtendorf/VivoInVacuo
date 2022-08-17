@@ -72,6 +72,7 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 
 func (g *Game) Setup() {
 	rand.Seed(time.Now().UnixNano())
+	g.Layout(0,0)
 
 	shipBase := NewImageFromByteSlice(ShipBase)
 	shipCargoMedium := NewImageFromByteSlice(CargoMedium)
@@ -115,7 +116,7 @@ func (g *Game) Setup() {
 }
 
 func (g *Game) createMockedObjects() {
-	for i := 0; i < 20; i++ {
+	for i := 0; i < 40; i++ {
 		g.createNewRandomBundledFloatingObject()
 		g.createRandomFloatingObject(3,3, Fcolor{0,0,1,1})
 		g.createRandomFloatingObject(5,9, Fcolor{1,0,0,1})
