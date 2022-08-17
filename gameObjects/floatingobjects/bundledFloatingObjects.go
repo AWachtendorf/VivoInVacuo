@@ -2,10 +2,11 @@ package floatingobjects
 
 import (
 	"fmt"
+	"math"
+
 	"github.com/AWachtendorf/VivoInVacuo/v2/gameObjects/particleSystems"
 	. "github.com/AWachtendorf/VivoInVacuo/v2/mathsandhelper"
 	"github.com/hajimehoshi/ebiten/v2"
-	"math"
 )
 
 // BundledFloatingObject is a bunch of FloatingObjects.
@@ -79,7 +80,6 @@ func (b *BundledFloatingObject) Explode() {
 		floatingObject.thrust = RandFloats(-1, 1)
 	}
 }
-
 
 func (b *BundledFloatingObject) BoundingBox() Rect {
 	if !b.exploded {

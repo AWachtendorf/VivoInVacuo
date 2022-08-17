@@ -1,6 +1,8 @@
 package playerShip
 
 import (
+	"time"
+
 	. "github.com/AWachtendorf/VivoInVacuo/v2/animation"
 	"github.com/AWachtendorf/VivoInVacuo/v2/assets"
 	"github.com/AWachtendorf/VivoInVacuo/v2/gameObjects/particleSystems"
@@ -12,14 +14,13 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/examples/resources/fonts"
 	"golang.org/x/image/colornames"
-	"time"
 )
 
 type GunType int
 
-//single - strong but slow
-//double - normal amount, middle
-//gatling - less damage faster
+// single - strong but slow
+// double - normal amount, middle
+// gatling - less damage faster
 const (
 	single GunType = iota
 	double
@@ -50,29 +51,28 @@ const (
 	largeCockpit
 )
 
-
 // Ship is our player character.
 type Ship struct {
-	shipBase    *ebiten.Image
-	shipCockpit *ebiten.Image
+	shipBase                                              *ebiten.Image
+	shipCockpit                                           *ebiten.Image
 	shipCockpitSmall, shipCockpitMiddle, shipCockpitLarge *ebiten.Image
-	shipCargo   *ebiten.Image
-	shipCargoSmall,shipCargoMiddle,shipCargoLarge *ebiten.Image
-	shipGun     *ebiten.Image
-	shipGunSingle,shipGunDouble,shipGunGatling *ebiten.Image
+	shipCargo                                             *ebiten.Image
+	shipCargoSmall, shipCargoMiddle, shipCargoLarge       *ebiten.Image
+	shipGun                                               *ebiten.Image
+	shipGunSingle, shipGunDouble, shipGunGatling          *ebiten.Image
 
 	shipImageOptions          *ebiten.DrawImageOptions
 	positionPixelImage        *ebiten.Image
 	positionPixelImageOptions *ebiten.DrawImageOptions
 	scale, width, height      float64
 
-	position                   Vec2d
-	rotation                   float64
-	rotationThrust             float64
+	position                              Vec2d
+	rotation                              float64
+	rotationThrust                        float64
 	thrust, maxThrust, boosted, unboosted float64
-	rotated, accelerated       bool
-	otherForce                 Vec2d
-	mass                       float64
+	rotated, accelerated                  bool
+	otherForce                            Vec2d
+	mass                                  float64
 
 	shieldMax, hullMax float64
 	repairKit          float64
@@ -178,17 +178,17 @@ func NewShip(base, cockpit, cargo, gun, torpedoImg *ebiten.Image, torpedos int) 
 	s := &Ship{
 		shipBase:                  base,
 		shipCockpit:               cockpit,
-		shipCockpitSmall:  NewImageFromByteSlice(assets.CockpitSmall),
-		shipCockpitMiddle:  NewImageFromByteSlice(assets.CockpitMedium),
-		shipCockpitLarge:  NewImageFromByteSlice(assets.CockpitLarge),
+		shipCockpitSmall:          NewImageFromByteSlice(assets.CockpitSmall),
+		shipCockpitMiddle:         NewImageFromByteSlice(assets.CockpitMedium),
+		shipCockpitLarge:          NewImageFromByteSlice(assets.CockpitLarge),
 		shipCargo:                 cargo,
-		shipCargoSmall:  NewImageFromByteSlice(assets.CargoSmall),
-		shipCargoMiddle:  NewImageFromByteSlice(assets.CargoMedium),
-		shipCargoLarge:  NewImageFromByteSlice(assets.CargoLarge),
+		shipCargoSmall:            NewImageFromByteSlice(assets.CargoSmall),
+		shipCargoMiddle:           NewImageFromByteSlice(assets.CargoMedium),
+		shipCargoLarge:            NewImageFromByteSlice(assets.CargoLarge),
 		shipGun:                   gun,
-		shipGunSingle:  NewImageFromByteSlice(assets.ShipGunSingle),
-		shipGunDouble:  NewImageFromByteSlice(assets.ShipGunDouble),
-		shipGunGatling:  NewImageFromByteSlice(assets.ShipGunDouble),
+		shipGunSingle:             NewImageFromByteSlice(assets.ShipGunSingle),
+		shipGunDouble:             NewImageFromByteSlice(assets.ShipGunDouble),
+		shipGunGatling:            NewImageFromByteSlice(assets.ShipGunDouble),
 		shipImageOptions:          &ebiten.DrawImageOptions{},
 		positionPixelImage:        pix,
 		positionPixelImageOptions: &ebiten.DrawImageOptions{},
@@ -197,8 +197,8 @@ func NewShip(base, cockpit, cargo, gun, torpedoImg *ebiten.Image, torpedos int) 
 		thrust:                    0,
 		maxThrust:                 3,
 		boosted:                   5,
-		unboosted: 3,
-		position:                  Vec2d{X: float64(ScreenWidth / 2), Y:float64( ScreenHeight / 2)},
+		unboosted:                 3,
+		position:                  Vec2d{X: float64(ScreenWidth / 2), Y: float64(ScreenHeight / 2)},
 		scale:                     1,
 		width:                     float64(w),
 		height:                    float64(h),
