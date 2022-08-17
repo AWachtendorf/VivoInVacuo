@@ -7,8 +7,7 @@ func (s *Ship) ApplyDamage(damage float64) {
 	} else {
 		s.shieldBar.ApplyDamage(damage)
 	}
-	if s.healthBar.Percentage() <= 10{
-		println("THIS SHIP WOULD BE FUCKING DEAD!")
+	if s.healthBar.Percentage() <= 10 {
+		println("THIS SHIP WOULD BE FUCKING DEAD!") //only debugging mssg
 	}
 }
-

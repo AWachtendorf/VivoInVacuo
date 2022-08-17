@@ -14,7 +14,7 @@ func main() {
 	//ebiten.SetFullscreen(true)
 
 	ebiten.SetWindowTitle("Vivo In Vacuo")
-	ebiten.SetWindowSize(1000,1000)
+	ebiten.SetWindowSize(2000,1000)
 	if err := ebiten.RunGame(&g); err != nil {
 		log.Fatal(err)
 	}

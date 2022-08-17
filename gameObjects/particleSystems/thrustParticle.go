@@ -1,12 +1,13 @@
 package particleSystems
 
 import (
-	. "github.com/AWachtendorf/VivoInVacuo/v2/animation"
-	. "github.com/AWachtendorf/VivoInVacuo/v2/mathsandhelper"
-	"github.com/hajimehoshi/ebiten/v2"
 	"math"
 	"math/rand"
 	"time"
+
+	. "github.com/AWachtendorf/VivoInVacuo/v2/animation"
+	. "github.com/AWachtendorf/VivoInVacuo/v2/mathsandhelper"
+	"github.com/hajimehoshi/ebiten/v2"
 )
 
 // A Particle is a small image that is used in whole batches.
@@ -49,16 +50,16 @@ func (p *Particle) CheckState() bool {
 }
 
 // Start function for particle, sets only start position and direction
-func (p *Particle) Start(angle float64, startPos Vec2d, scale,speed float64) {
+func (p *Particle) Start(angle float64, startPos Vec2d, scale, speed float64) {
 
-		p.particleAlpha = NewLinearFloatAnimation(p.lifetime, 1, 0)
-		p.starttime = time.Duration(time.Now().UnixNano())
-		p.position = startPos
-		p.speed = speed
-		p.scale = scale
-		rotation := angle * (math.Pi / 180) //the gameObjects flies in the angled position
-		rotationvec := Vec2d{X: math.Cos(rotation), Y: math.Sin(rotation)}
-		p.direction = rotationvec
+	p.particleAlpha = NewLinearFloatAnimation(p.lifetime, 1, 0)
+	p.starttime = time.Duration(time.Now().UnixNano())
+	p.position = startPos
+	p.speed = speed
+	p.scale = scale
+	rotation := angle * (math.Pi / 180) //the gameObjects flies in the angled position
+	rotationvec := Vec2d{X: math.Cos(rotation), Y: math.Sin(rotation)}
+	p.direction = rotationvec
 
 }
 
@@ -86,7 +87,7 @@ func NewParticle(image *ebiten.Image) *Particle {
 	part := &Particle{
 		particleImage:        image,
 		particleImageOptions: &ebiten.DrawImageOptions{},
-		scale:               1,
+		scale:                1,
 		lifetime:             time.Millisecond * (300 + time.Duration(rand.Intn(250)))}
 
 	return part

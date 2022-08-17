@@ -15,7 +15,6 @@ type StaticParticle struct {
 }
 
 func (s *StaticParticle) Update() error {
-
 	return nil
 }
 
